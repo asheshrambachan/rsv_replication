@@ -22,13 +22,15 @@ out <- boot(
   Y_var = "Y",      # GT Outcome
   S_var = "S",      # Sample indicator
   D_var = "D",      # Treatment indicator
-  # FE_vars = c("rabovemed", "district", "baseline_complete", "listing_not_complete", "vill_added_back"),
-  # cluster = "village_id",
+  FE_vars = c("rabovemed", "district", "baseline_complete", "listing_not_complete", "vill_added_back"),
+  cluster = "village_id",
   mle = list(S_var="S", cluster_var="village_id"),
   R = 5000, # Number of bootstrap replications
   parallel = "multicore",
   sim = "parametric",
 ) 
+
+print(out)
 
 # Save Output
 output_path <- sprintf("data/clean/cropburn/te_bootstrap_%s.rds", Sys.Date())

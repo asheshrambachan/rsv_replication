@@ -29,4 +29,8 @@ data/raw/cropburn/jacketal_replication_package/Data/Spotchecks/*
 
 data/raw/antipoverty/muralidharanetal_replication_package/*
 
+data/clean/cropburn/villages/*
+data/clean/cropburn/districts/*
+
 paper.pdf
+

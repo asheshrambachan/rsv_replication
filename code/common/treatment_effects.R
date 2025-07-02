@@ -1,12 +1,12 @@
 # Load required package
 library(fixest)
 library(dplyr)
-# 
-# # Helper: Build formula as string from RHS variables
-# build_formula <- function(lhs_var, rhs_vars) {
-#   rhs_vars <- paste0("i(", rhs_vars, ")", collapse = " + ")
-#   as.formula(paste(lhs_var, "~", rhs_vars))
-# }
+
+# Helper: Build formula as string from RHS variables
+build_formula <- function(lhs_var, rhs_vars) {
+  rhs_vars <- paste0("i(", rhs_vars, ")", collapse = " + ")
+  as.formula(paste(lhs_var, "~", rhs_vars))
+}
 
 # ----------------------------------------------------------
 # Function to compute treatment effect decomposition:
@@ -14,27 +14,21 @@ library(dplyr)
 #   - theta_tilde = effect of D on R (experimental sample)
 #   - theta_star  = scaled effect: theta_tilde / beta
 # ----------------------------------------------------------
-treatment_effects <- function(data, R_var, Y_var, S_var, D_var) {
+treatment_effects <- function(data, R_var, Y_var, S_var, D_var, FE_vars, cluster) {
   
   # Fit model: R (RSV) ~ Y (GT) + FE (on observational sample)
   model_R_Y <- feols(
-    fml = as.formula(paste(
-      R_var," ~ i(", Y_var, ") + i(rabovemed) + i(district) + 
-      i(baseline_complete) + i(listing_not_complete) + i(vill_added_back)"
-    )),
+    fml = build_formula(R_var, c(Y_var, FE_vars)),
     data = data %>% filter(!!sym(S_var) == "o"), 
-    cluster = ~village_id,
+    cluster = cluster,
     notes = FALSE
   )
   
   # Fit model: R (RSV) ~ D (AnyPES) + FE (on experimental sample)
   model_R_D <- feols(
-    fml = as.formula(paste(
-      R_var, " ~ i(", D_var, ") + i(rabovemed) + i(district) + 
-      i(baseline_complete) + i(listing_not_complete) + i(vill_added_back)"
-    )),
+    fml = build_formula(R_var, c(D_var, FE_vars)),
     data = data %>% filter(!!sym(S_var) == "e"), 
-    cluster = ~village_id,
+    cluster = cluster,
     notes = FALSE
   )
   

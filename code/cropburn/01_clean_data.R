@@ -59,7 +59,7 @@ fields <- read_dta("data/raw/cropburn/jacketal_replication_package/Data/Analysis
   
   # Keep only needed variables
   select(
-    village_id, district, R_bal, R_max, R_prob, Y, Y_recon, S, D,
+    unique_plot_id, village_id, district, R_bal, R_max, R_prob, Y, Y_recon, S, D,
     rabovemed, baseline_complete, listing_not_complete, vill_added_back
   ) %>%
   
@@ -71,7 +71,9 @@ fields <- read_dta("data/raw/cropburn/jacketal_replication_package/Data/Analysis
   )) 
 
 # Merge SHRUG Mapping into Fields Data
-fields <- right_join(shrug_jacketal_mapping, fields, by = "village_id")
+fields <- right_join(shrug_jacketal_mapping, fields, by = "village_id") %>%
+  arrange(unique_plot_id) %>%
+  select(-unique_plot_id)
 
 # Save cleaned dataset
 write.csv(fields, "data/clean/cropburn/data.csv", row.names = FALSE)
