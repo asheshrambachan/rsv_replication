@@ -11,6 +11,7 @@ library(readr)    # Read csv files with specified column type
 shrug_jacketal_mapping <- read_csv(
   "data/raw/cropburn/shrug_jacketal_mapping.csv", 
   col_types = cols(pc11_tv_id = "c"),
+  col_select = c("pc11_tv_id", "village_id")
   )
 
 # Read and Clean Jack et al Plot-Level Data

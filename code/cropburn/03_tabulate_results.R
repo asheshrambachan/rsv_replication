@@ -10,6 +10,7 @@ source("code/common/boot_summary.r")
 
 # Load bootstrapped estimates
 coef_boot <- readRDS("data/clean/cropburn/te_bootstrap_2025-07-02.rds")
+coef_boot <- readRDS("data/clean/cropburn/te_bootstrap_2025-03-20.rds")
 
 # Create a modelsummary-formatted list of boot coefficient summaries
 tab <- modelsummary(

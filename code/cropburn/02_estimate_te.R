@@ -8,7 +8,7 @@ source("code/common/cluster_grouped_sample.R")
 source("code/common/treatment_effects.R")
 
 # Load cleaned dataset
-fields <- read.csv("data/clean/cropburn/data.csv")
+data <- read.csv("data/clean/cropburn/data.csv")
 
 # Set seed for reproducibility
 set.seed(0) 
@@ -17,12 +17,13 @@ set.seed(0)
 out <- boot(
   statistic = treatment_effects,
   ran.gen = cluster_grouped_sample,
-  data = fields,
+  data = data,
   R_var = "R_bal",  # RSV Outcome
   Y_var = "Y",      # GT Outcome
   S_var = "S",      # Sample indicator
   D_var = "D",      # Treatment indicator
-  FE_vars = c("rabovemed", "district", "baseline_complete", "listing_not_complete", "vill_added_back"),
+  # FE_vars = c("rabovemed", "district", "baseline_complete", "listing_not_complete", "vill_added_back"),
+  # cluster = "village_id",
   mle = list(S_var="S", cluster_var="village_id"),
   R = 5000, # Number of bootstrap replications
   parallel = "multicore",

@@ -36,7 +36,10 @@ conda activate rsv_replication
 
 ### Step 2: Downloading SHRUG Data 
 
-If you plan to replicate the data cleaning process, you need to download SHRUG data, which is not included in this repository due to size constraints.
+This directory contains scripts to generate selected shapefiles using data from SHRUG v2.1.  
+Due to licensing restrictions (CC BY-NC-SA 4.0), the shapefiles themselves are not redistributed here.  
+To obtain the data, please follow the steps below:
+
 1. Visit [SHURUG download page](https://www.devdatalab.org/shrug_download/) from Development Data Lab.
 2. Navigate to "Open Polygons and Spatial Statistics."
 3. Download the following SHP files:
