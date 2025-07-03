@@ -1,17 +1,18 @@
+# Clear environment
+rm(list=ls())
+
 # Load libraries, theme, font, and palette
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-library(sf)
-library(ggtext)
-library(readr)
+suppressPackageStartupMessages({
+  library(ggplot2)
+  library(dplyr)
+  library(tidyr)
+  library(sf)
+  library(ggtext)
+  library(readr)
+})
 source("code/common/ggplot_theme.r")  
 
-# Load shapefiles
-districts <- st_read("data/clean/cropburn/districts/districts.shp", quiet=T)
-villages <- st_read("data/clean/cropburn/villages/villages.shp", quiet=T) 
-
-# Load fields data and collapse to village level
+# Load data and collapse to village level
 data <- read_csv(
   "data/clean/cropburn/data.csv",
   col_types = cols(pc11_tv_id = "c"),
@@ -25,45 +26,37 @@ data <- read_csv(
     SD = paste0(S, D),
     .groups = "drop"
   ) 
-data <- right_join(villages, data, by = "pc11_tv_id")
 
-# Base map function
-base_map <- function(fill_data) {
-  
-  # Define legend labels and colors
-  labels <- c(
-    e1 = "Experimental: *D=1*", 
-    e0 = "Experimental: *D=0*", 
-    o1 = "Observational: *D=1*", 
-    o0 = "Observational: *D=0*"
-  )
-  colors <- c(
-    e1 = palette$darkblue,
-    e0 = palette$blue, 
-    o1 = palette$darkgreen, 
-    o0 = palette$green
-  )
-  
-  list(
-    geom_sf(data = districts, fill = palette$gray, color = NA),
-    geom_sf(data = fill_data, aes(fill = SD), linewidth = 0.2, color = "white"),
-    geom_sf(data = villages, fill = NA, color = "white", linewidth = 0.2),
-    geom_sf(data = districts, fill = NA, color = "white", linewidth = 0.5),
-    scale_fill_manual(name = NULL, breaks = names(labels), labels = labels, values = colors),
-    cropburn_map_theme
-  )
-}
+# Define legend labels and colors
+labels <- c(
+  e1 = "Experimental: *D=1*", 
+  e0 = "Experimental: *D=0*", 
+  o1 = "Observational: *D=1*", 
+  o0 = "Observational: *D=0*"
+)
+colors <- c(
+  e1 = palette$darkblue,
+  e0 = palette$blue, 
+  o1 = palette$darkgreen, 
+  o0 = palette$green
+)
 
 # Plot A: Experimental villages only
 fig_a <- ggplot() +
-  base_map(filter(data, S == "e")) +
+  cropburn_base_map(filter(data, S == "e"), fill=SD, labels=labels, colors=colors) +
   theme(legend.position.inside = c(-0.006, 0.5935))
+
+# Save figures
+output_path <- "output/figures/cropburn_exp.jpeg"
+ggsave(output_path, plot = fig_a, height = 4, width = 3.9)
+cat(sprintf("Saved figure to: %s\n", output_path))
 
 # Plot B: Experimental and observational villages
 fig_b <- ggplot() +
-  base_map(data) +
+  cropburn_base_map(data, fill=SD, labels=labels, colors=colors) +
   theme(legend.position.inside = c(0, 0.53))
 
 # Save figures
-ggsave("output/figures/cropburn_exp.jpeg", plot = fig_a, height = 4, width = 3.9)
-ggsave("output/figures/cropburn_exp_and_obs.jpeg", plot = fig_b, height = 4, width = 3.9)
+output_path <- "output/figures/cropburn_exp_and_obs.jpeg"
+ggsave(output_path, plot = fig_b, height = 4, width = 3.9)
+cat(sprintf("Saved figure to: %s\n", output_path))

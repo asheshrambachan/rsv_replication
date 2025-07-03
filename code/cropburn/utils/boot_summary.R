@@ -1,8 +1,10 @@
 # Load required packages
-library(boot)
-library(boot.pval)
-library(dplyr)
-library(modelsummary)
+suppressPackageStartupMessages({
+  library(boot)
+  library(boot.pval)
+  library(dplyr)
+  library(modelsummary)
+})
 
 # Summarize a single coefficient from a boot object in modelsummary format
 boot_summary <- function(boot_data, coef_name){

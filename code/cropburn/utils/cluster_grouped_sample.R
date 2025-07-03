@@ -1,6 +1,9 @@
 # Load required packages
-library(dplyr)
-library(purrr)
+# Load required packages
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(purrr)
+})
 
 # Function: Clustered resampling stratified by a grouping variable
 cluster_grouped_sample <- function(data, mle=list(S_var="S_var", cluster_var="village_id")) {

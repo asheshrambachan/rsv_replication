@@ -45,8 +45,8 @@ To obtain the data, please follow the steps below:
 3. Download the following SHP files:
 	- PC11 State Polygons
     - PC11 District Polygons
-	- PC11 Subdistrict Polygons
 	- PC11 Village Polygons
+	- Shrid Polygons
 4. Replace the placeholder folder in `./data/raw/shrug`  with the unzipped folders.
 
 ## Replication Options
@@ -57,7 +57,7 @@ You can replicate the results using one of the following methods:
 
 1. **Full Replication:** Run the following to execute all steps in sequence:
     ```
-    Rscript ./code/cropburn/run_all.R
+    Rscript ./code/cropburn/00_run_all.R
     ```
 
 2. **Partial Replication:** Run individual scripts for specific steps. 
@@ -72,7 +72,7 @@ You can replicate the results using one of the following methods:
         Rscript ./code/cropburn/estimate_te.R
         ```
 
-    3. Generate treatment effect table.
+    3. Generate treatment effect tables.
         ```sh
         Rscript ./code/cropburn/03_tabulate_results.R
         ```

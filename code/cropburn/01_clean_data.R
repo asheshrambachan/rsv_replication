@@ -2,10 +2,12 @@
 rm(list = ls())
 
 # Load required libraries
-library(haven)    # For reading .dta files
-library(dplyr)    # For data manipulation
-library(sf)       # For spatial data
-library(readr)    # Read csv files with specified column type
+suppressPackageStartupMessages({
+  library(haven)    # For reading .dta files
+  library(dplyr)    # For data manipulation
+  library(sf)       # For spatial data
+  library(readr)    # Read csv files with specified column type
+})
 
 # Load Jack et al to SHRUG Village Mapping
 shrug_jacketal_mapping <- read_csv(
@@ -15,7 +17,7 @@ shrug_jacketal_mapping <- read_csv(
   )
 
 # Read and Clean Jack et al Plot-Level Data
-fields <- read_dta("data/raw/cropburn/jacketal_replication_package/Data/Analysis/dataset_for_analysis_plot_level.dta") %>%
+data <- read_dta("data/raw/cropburn/jacketal_replication_package/Data/Analysis/dataset_for_analysis_plot_level.dta") %>%
   
   # Remove incomplete or alternate IDs
   select(-village_id, -blp_plot_id, -sc_plot_id) %>%
@@ -71,23 +73,62 @@ fields <- read_dta("data/raw/cropburn/jacketal_replication_package/Data/Analysis
   )) 
 
 # Merge SHRUG Mapping into Fields Data
-fields <- right_join(shrug_jacketal_mapping, fields, by = "village_id") %>%
+data <- right_join(shrug_jacketal_mapping, data, by = "village_id") %>%
   arrange(unique_plot_id) %>%
   select(-unique_plot_id)
 
 # Save cleaned dataset
-write.csv(fields, "data/clean/cropburn/data.csv", row.names = FALSE)
+output_path <- "data/clean/cropburn/data.csv"
+write.csv(data, output_path, row.names = FALSE)
+cat(sprintf("Saved cleaned data to: %s\n", output_path))
 
 # Clean and filter district shapefile (Bathinda & Faridkot only)
-districts <- st_read("data/raw/shrug/shrug-pc11dist-poly-shp/district.shp", quiet=T) %>%
+raw_shp <- "data/raw/shrug/shrug-pc11dist-poly-shp/district.shp"
+if (!file.exists(raw_shp)) {
+  stop(
+    paste(
+      "File does not exist:", raw_shp, "\n",
+      "Please follow these steps to download the required data:\n",
+      "1) Visit https://www.devdatalab.org/shrug_download/\n",
+      "2) Navigate to the 'Open Polygons and Spatial Statistics' tab\n",
+      "3) For 'PC11 District Polygons', click on 'SHP' to download\n",
+      "4) Unzip the downloaded file\n",
+      "5) Place the unzipped folder named 'shrug-pc11dist-poly-shp' into the directory: data/raw/shrug/"
+    )
+  )
+}
+
+districts <- st_read(raw_shp, quiet=T) %>%
   filter(d_name %in% c("Bathinda", "Faridkot"))
 
-st_write(districts, "data/clean/cropburn/districts/districts.shp", append=F)
+output_path <- "data/clean/cropburn/districts/districts.shp"
+dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
+st_write(districts, output_path, append=F, quiet=T)
+cat(sprintf("Saved cleaned shapefiles to: %s\n", output_path))
+
 
 # Clean and filter village shapefile (within selected districts)
-villages <- st_read("data/raw/shrug/shrug-pc11-village-poly-shp/village_modified.shp", quiet=T) %>%
+raw_shp <- "data/raw/shrug/shrug-pc11-village-poly-shp/village_modified.shp"
+if (!file.exists(raw_shp)) {
+  stop(
+    paste(
+      "File does not exist:", raw_shp, "\n",
+      "Please follow these steps to download the required data:\n",
+      "1) Visit https://www.devdatalab.org/shrug_download/\n",
+      "2) Navigate to the 'Open Polygons and Spatial Statistics' tab\n",
+      "3) For 'PC11 Village Polygons', click on 'SHP' to download\n",
+      "4) Unzip the downloaded file\n",
+      "5) Place the unzipped folder named 'shrug-pc11-village-poly-shp' into the directory: data/raw/shrug/"
+    )
+  )
+}
+
+villages <- st_read(raw_shp, quiet=T) %>%
   filter(pc11_d_id %in% districts$pc11_d_id) %>%
   select(-mdds_og)
 
-st_write(villages, "data/clean/cropburn/villages/villages.shp", append=F)
+output_path <- "data/clean/cropburn/villages/villages.shp"
+dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
+st_write(villages, output_path, append=F, quiet=T)
+cat(sprintf("Saved cleaned shapefiles to: %s\n", output_path))
 

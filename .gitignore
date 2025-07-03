@@ -1,5 +1,9 @@
 .DS_Store
 .Rproj.user
+
+.RData
+.Rhistory
+
 data/raw/shrug/shrug-ec13-csv
 data/raw/shrug/shrug-pc11dist-poly-shp
 data/raw/shrug/shrug-pc11subdist-poly-shp
@@ -31,6 +35,10 @@ data/raw/antipoverty/muralidharanetal_replication_package/*
 
 data/clean/cropburn/villages/*
 data/clean/cropburn/districts/*
+
+data/clean/antipoverty/state/*
+data/clean/antipoverty/districts/*
+data/clean/antipoverty/shrids/*
 
 paper.pdf
 
