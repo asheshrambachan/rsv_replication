@@ -69,7 +69,7 @@ You can replicate the results using one of the following methods:
 
     2. Run bootstrap simulations. 
         ```sh
-        Rscript ./code/cropburn/estimate_te.R
+        Rscript ./code/cropburn/02_estimate_te.R
         ```
 
     3. Generate treatment effect tables.
