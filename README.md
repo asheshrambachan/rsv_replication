@@ -36,18 +36,22 @@ conda activate rsv_replication
 
 ### Step 2: Downloading SHRUG Data 
 
-This directory contains scripts to generate selected shapefiles using data from SHRUG v2.1.  
-Due to licensing restrictions (CC BY-NC-SA 4.0), the shapefiles themselves are not redistributed here.  
-To obtain the data, please follow the steps below:
+This directory contains scripts that uses data from [SHRUG v2.1](https://www.devdatalab.org/shrug_download/) by Development Data Lab.
 
-1. Visit [SHURUG download page](https://www.devdatalab.org/shrug_download/) from Development Data Lab.
-2. Navigate to "Open Polygons and Spatial Statistics."
-3. Download the following SHP files:
+Note: Due to licensing restrictions (CC BY-NC-SA 4.0), the raw and processed data are not included in this repository. To obtain it, follow these steps:
+
+1. Go to the SHRUG Download page [[SHURUG download page](https://www.devdatalab.org/shrug_download/)](https://www.devdatalab.org/shrug_download/)
+2. Navigate to the tab labeled **Open Polygons and Spatial Statistics**, and download the `SHP` format for:
 	- PC11 State Polygons
     - PC11 District Polygons
 	- PC11 Village Polygons
 	- Shrid Polygons
-4. Replace the placeholder folder in `./data/raw/shrug`  with the unzipped folders.
+3. Navigate to **Night-time lights**, and download the `CSV` format for:
+	- VIIRS Night Lights (2012 - 2021)
+4. Navigate to **SECC consumption**, and download the `CSV` format for:
+    - SECC Rural Consumption
+    - SECC Urban Consumption
+5. Replace the placeholder folder in `./data/raw/shrug`  with the unzipped folders.
 
 ## Replication Options
 
@@ -114,3 +118,5 @@ This repository contains proprietary data that is intended for internal use only
 - [ ] Add `boot.pval` to conda env
 - [ ] Add a codebook to data in kelseyjack_et_al using the [google doc file](Crop Burning Application Notes)
 - [ ] Change google doc to private
+- [ ] replace `buffer_holdout` with `real`
+- [ ] replace `random` with `synthetic`

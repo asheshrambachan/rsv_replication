@@ -1,3 +1,6 @@
+
+library(ggtext)
+
 font <- "Times" 
 
 palette <- list(
@@ -41,7 +44,7 @@ density_theme <- theme_bw() +
   )
 
 # Cropburn base map function
-cropburn_base_map <- function(data, fill, labels, colors) {
+cropburn_base_map <- function(data, fill, guide, legend.position.inside = c(0.73,0.234)) {
   
   # Load shapefiles
   districts <- st_read("data/clean/cropburn/districts/districts.shp", quiet=T)
@@ -53,21 +56,23 @@ cropburn_base_map <- function(data, fill, labels, colors) {
     geom_sf(data = data, aes(fill = !!ensym(fill)), linewidth = 0.2, color = "white"),
     geom_sf(data = villages, fill = NA, color = "white", linewidth = 0.2),
     geom_sf(data = districts, fill = NA, color = "white", linewidth = 0.5),
-    scale_fill_manual(name = NULL, breaks = names(labels), labels = labels, values = colors),
+    scale_fill_manual(name = NULL, breaks = guide$breaks, labels = guide$labels, values = guide$colors),
     theme_void(),
     theme(
-      plot.margin = unit(c(-0.4,-1.75,-0.4,0.7), "cm"),
       legend.text = element_markdown(size=12, family=font, color="black"),
-      legend.position = "inside",
       legend.direction = "vertical",
+      legend.box.just = "top",
       legend.key.spacing.y = unit(0.2, "cm"),
       legend.key.size = unit(0.5, "cm"),
+      legend.position = "inside",
+      plot.margin = unit(c(-0.4,-1.75,-0.4,0.7), "cm"), # shift map to the right a bit for legend
+      legend.position.inside = legend.position.inside
     ) 
   )
 }
 
 # Anti-poverty base map function
-antipoverty_base_map <- function(data, fill, labels, colors) {
+antipoverty_base_map <- function(data, fill, guide, legend.position.inside = c(0.73,0.234)) {
   
   # Load shapefiles
   state <- st_read("data/clean/antipoverty/state/state.shp", quiet=T)
@@ -79,15 +84,16 @@ antipoverty_base_map <- function(data, fill, labels, colors) {
     geom_sf(data = state, fill=palette$gray, color=NA),
     geom_sf(data = data, aes(fill=!!ensym(fill)), color="white", linewidth=0.04),
     geom_sf(data = districts, fill=NA, color="white", linewidth=0.3),
-    scale_fill_manual(name=NULL, breaks = names(labels), labels = labels, values = colors),
+    scale_fill_manual(name=NULL, breaks = guide$breaks, labels = guide$labels, values = guide$colors),
     theme_void(),
     theme(
       legend.text = element_markdown(size=14, family=font, color="black"),
-      legend.position = "inside",
       legend.direction = "vertical",
       legend.box.just = "top",
       legend.key.spacing.y = unit(0.2, "cm"),
       legend.key.size = unit(0.5, "cm"),
+      legend.position = "inside",
+      legend.position.inside = legend.position.inside
     ) 
   )
 }

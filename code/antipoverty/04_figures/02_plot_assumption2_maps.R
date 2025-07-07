@@ -11,7 +11,7 @@ suppressPackageStartupMessages({
 source("code/common/ggplot_theme.r")  
 
 # Load data
-data <- read.csv("data/clean/antipoverty/results_pca.csv") %>%
+data <- read.csv("data/clean/antipoverty/pca.csv") %>%
   mutate(
     D = if_else(wave == "Treatment", 1, 0),
     S = if_else(wave == "Holdout", "o", "e"), 
@@ -19,29 +19,20 @@ data <- read.csv("data/clean/antipoverty/results_pca.csv") %>%
     SDY = paste0(S, D, Y)
   )
 
-# Define legend labels and colors
-labels <- c(
-  e01 = "Experimental: *D=0, Y=1*", 
-  e00 = "Experimental: *D=0, Y=0*", 
-  o01 = "Observational: *D=0, Y=1*",
-  o00 = "Observational: *D=0, Y=0*"
-)
-colors <- c(
-  e01 = palette$blue,
-  e00 = palette$blue,
-  o01 = palette$green,
-  o00 = palette$green
+# Define fill guide
+guide <- data.frame(
+  breaks = c("e01", "e00", "o01", "o00"),
+  labels = c("Experimental: *D=0, Y=1*", "Experimental: *D=0, Y=0*", "Observational: *D=0, Y=1*", "Observational: *D=0, Y=0*"),
+  colors = c(palette$blue, palette$blue, palette$green, palette$green)
 )
 
 # Plot A: Units with D = 0 and y_cons = 0
 fig_a <- ggplot() +
   antipoverty_base_map(
-    data = filter(data, D == 0, y_cons == 0),
+    data = filter(data, D == 0, y_cons == 0), 
     fill = SDY, 
-    labels = labels, 
-    colors = colors
-  ) +
-  theme(legend.position.inside = c(0.73,0.234)) 
+    guide = guide
+    )
 
 # Save figure
 output_path <- "output/figures/antipoverty_maps/antipoverty_D0_Ycons0.jpeg"
@@ -54,10 +45,8 @@ fig_b <- ggplot() +
   antipoverty_base_map(
     data = filter(data, D == 0, y_cons == 1),
     fill = SDY, 
-    labels = labels, 
-    colors = colors
-  ) +
-  theme(legend.position.inside = c(0.73,0.234)) 
+    guide = guide
+  )
 
 # Save figure
 output_path <- "output/figures/antipoverty_maps/antipoverty_D0_Ycons1.jpeg"

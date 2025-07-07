@@ -11,34 +11,28 @@ suppressPackageStartupMessages({
 source("code/common/ggplot_theme.r")  
 
 # Load data
-data <- read.csv("data/clean/antipoverty/results_pca.csv") %>%
+data <- read.csv("data/clean/antipoverty/pca.csv") %>%
   mutate(
     D = if_else(wave == "Treatment", 1, 0),
     S = if_else(wave == "Holdout", "o", "e"), 
     SD = paste0(S, D)
   ) 
 
-# Define legend labels and colors
-labels <- c(
-  e1 = "Experimental: *D=1*", 
-  e0 = "Experimental: *D=0*", 
-  o0 = "Observational: *D=0*"
-)
-colors <- c(
-  e1 = palette$darkblue,
-  e0 = palette$blue, 
-  o0 = palette$green
+# Define fill guide
+guide <- data.frame(
+  breaks = c("e1", "e0", "o0"),
+  labels = c("Experimental: *D=1*", "Experimental: *D=0*", "Observational: *D=0*"),
+  colors = c(palette$darkblue, palette$blue, palette$green)
 )
 
 # Plot A: Experimental villages only
 fig_a <- ggplot() +
   antipoverty_base_map(
-    data = filter(data, S == "e"),
+    data = filter(data, S == "e"), 
     fill = SD, 
-    labels = labels, 
-    colors = colors
-  ) +
-  theme(legend.position.inside = c(0.715,0.234)) 
+    guide = guide,
+    legend.position.inside = c(0.715,0.234)
+  )
 
 # Save figure
 output_path <- "output/figures/antipoverty_maps/antipoverty_exp.jpeg"
@@ -50,11 +44,10 @@ cat(sprintf("Saved figure to: %s\n", output_path))
 fig_b <- ggplot() +
   antipoverty_base_map(
     data = data, 
-    fill = SD, 
-    labels = labels, 
-    colors = colors
-  ) +
-  theme(legend.position.inside = c(0.72,0.2)) 
+    fill = SD,
+    guide = guide,
+    legend.position.inside = c(0.72,0.2)
+  )
 
 # Save figure
 output_path <- "output/figures/antipoverty_maps/antipoverty_exp_and_obs.jpeg"

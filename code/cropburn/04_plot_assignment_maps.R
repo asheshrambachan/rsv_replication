@@ -27,36 +27,39 @@ data <- read_csv(
     .groups = "drop"
   ) 
 
-# Define legend labels and colors
-labels <- c(
-  e1 = "Experimental: *D=1*", 
-  e0 = "Experimental: *D=0*", 
-  o1 = "Observational: *D=1*", 
-  o0 = "Observational: *D=0*"
-)
-colors <- c(
-  e1 = palette$darkblue,
-  e0 = palette$blue, 
-  o1 = palette$darkgreen, 
-  o0 = palette$green
+# Define fill guide
+guide <- data.frame(
+  breaks = c("e1", "e0", "o1", "o0"),
+  labels = c("Experimental: *D=1*", "Experimental: *D=0*", "Observational: *D=1*", "Observational: *D=0*"),
+  colors = c(palette$darkblue, palette$blue, palette$darkgreen, palette$green)
 )
 
 # Plot A: Experimental villages only
 fig_a <- ggplot() +
-  cropburn_base_map(filter(data, S == "e"), fill=SD, labels=labels, colors=colors) +
-  theme(legend.position.inside = c(-0.006, 0.5935))
+  cropburn_base_map(
+    data = filter(data, S == "e"), 
+    fill = SD, 
+    guide = guide, 
+    legend.position.inside = c(-0.006, 0.5935)
+    )
 
-# Save figures
-output_path <- "output/figures/cropburn_exp.jpeg"
+# Save figure
+output_path <- "output/figures/cropburn_maps/exp_only.jpeg"
+dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
 ggsave(output_path, plot = fig_a, height = 4, width = 3.9)
 cat(sprintf("Saved figure to: %s\n", output_path))
 
 # Plot B: Experimental and observational villages
 fig_b <- ggplot() +
-  cropburn_base_map(data, fill=SD, labels=labels, colors=colors) +
-  theme(legend.position.inside = c(0, 0.53))
+  cropburn_base_map(
+    data = data, 
+    fill = SD, 
+    guide = guide, 
+    legend.position.inside = c(0, 0.53)
+    )
 
-# Save figures
-output_path <- "output/figures/cropburn_exp_and_obs.jpeg"
+# Save figure
+output_path <- "output/figures/cropburn_maps/exp_and_obs.jpeg"
+dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
 ggsave(output_path, plot = fig_b, height = 4, width = 3.9)
 cat(sprintf("Saved figure to: %s\n", output_path))

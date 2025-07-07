@@ -1,8 +1,8 @@
 .DS_Store
 .Rproj.user
-
 .RData
 .Rhistory
+rsv_replication.Rproj
 
 data/raw/shrug/shrug-ec13-csv
 data/raw/shrug/shrug-pc11dist-poly-shp
@@ -12,7 +12,9 @@ data/raw/shrug/shrug-pc11-village-poly-shp
 data/raw/shrug/shrug-pc11state-poly-shp
 data/raw/shrug/shrug-secc-cons-rural-csv
 data/raw/shrug/shrug-shrid-poly-shp
-rsv_replication.Rproj
+
+data/raw/shrug/shrug-viirs-annual-csv/*
+data/raw/shrug/shrug-viirs-annual-csv_v2/*
 
 data/raw/cropburn/jacketal_replication_package/Ado/*
 data/raw/cropburn/jacketal_replication_package/Do/*
@@ -40,5 +42,8 @@ data/clean/antipoverty/state/*
 data/clean/antipoverty/districts/*
 data/clean/antipoverty/shrids/*
 
-paper.pdf
+data/clean/antipoverty/simulations/*
+data/clean/antipoverty/features/*
+data/clean/antipoverty/data.csv
 
+paper.pdf

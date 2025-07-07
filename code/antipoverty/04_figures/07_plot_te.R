@@ -5,23 +5,20 @@ suppressPackageStartupMessages({
   library(stringr)
 })
 
+source("code/common/ggplot_theme.r")  
 
-font <- "Times" 
 
-est_S_theme <- data.frame(
-  levels = c("true", "rsv_random", "rsv_buffer_holdout"),
+guide <- data.frame(
+  breaks = c("benchmark", "rsv_synthetic", "rsv_real"),
   labels = c("Benchmark", "RSV: Synthetic samples", "RSV: Real samples"),
-  colors = c("black", "#8DB1CE", "#43739D"),
+  colors = c("black", palette$blue, palette$darkblue),
   shapes = c(17, 15, 19)
 )
 
-data <- read.csv("data/clean/antipoverty/results_main.csv") %>%
-  filter(
-    estimator=="true" |  (estimator=="rsv" & (S %in% c("buffer_holdout", "random")))
-  ) %>%
+data <- read.csv("data/clean/antipoverty/estimates.csv") %>%
   mutate(
     estimator_S = ifelse(is.na(S), estimator, paste0(estimator, "_", S)),
-    estimator_S = factor(estimator_S, levels=est_S_theme$levels, labels=est_S_theme$labels)
+    estimator_S = factor(estimator_S, levels = guide$breaks, labels = guide$labels)
   )
 
 for (Y_name in c("cons", "05k", "10k")){
@@ -37,12 +34,12 @@ for (Y_name in c("cons", "05k", "10k")){
       color=NULL
     ) +
     scale_color_manual(
-      breaks = est_S_theme$labels,
-      values = est_S_theme$colors
+      breaks = guide$labels,
+      values = guide$colors
     ) +
     scale_shape_manual(
-      breaks = est_S_theme$labels,
-      values = est_S_theme$shape
+      breaks = guide$labels,
+      values = guide$shape
     ) +
     scale_x_discrete(labels = ~ str_wrap(as.character(.x), 5, whitespace_only=F)) +
     scale_y_continuous(limits=c(-0.16, 0.01), minor_breaks = seq(-2,2,0.01)) +
@@ -61,8 +58,6 @@ for (Y_name in c("cons", "05k", "10k")){
   
   output_path <- sprintf("output/figures/antipoverty_te/Y%s.jpeg", Y_name)
   dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
-  # if (Y_name!="cons") 
-    # fig <- fig + theme(axis.title.y = element_blank())
   ggsave(output_path, plot = fig, height = 3, width = 3)
   cat(sprintf("Saved figure to: %s\n", output_path))
   

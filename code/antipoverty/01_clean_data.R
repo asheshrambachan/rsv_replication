@@ -72,7 +72,7 @@ if (!file.exists(raw_shp)) {
   )
 }
 
-shird_ids <- read_csv("data/clean/antipoverty/results_pca.csv", col_select = "shrid2", show_col_types = F) %>%
+shird_ids <- read_csv("data/clean/antipoverty/pca.csv", col_select = "shrid2", show_col_types = F) %>%
   distinct()
 shrids <- st_read(raw_shp, quiet=T) %>%
   right_join(., shird_ids, by="shrid2")
@@ -82,3 +82,32 @@ dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
 st_write(shrids, output_path, append=F, quiet=T)
 cat(sprintf("Saved cleaned shapefiles to: %s\n", output_path))
 
+
+
+
+
+data_wo_features <- read.csv("data/clean/antipoverty/data_wo_features.csv") %>%
+  rename(c(
+    Y05k = y_05k,
+    Y10k = y_10k,
+    Ycons = y_cons,
+  )) %>%
+  select(shrid2, lat, lon, tot_p, tot_f, urban, wave, clusters, D, Y05k, Y10k, Ycons)
+
+viirs_annual <- read.csv("data/raw/shrug/shrug-viirs-annual-csv/viirs_annual_shrid.csv") %>%
+  filter(
+    shrid2 %in% unique(data_wo_features$shrid2),
+    year %in% 2012:2021,
+    category == "median-masked",
+  ) %>%
+  select(-category) %>%
+  reshape(dir="w", idvar="shrid2", timevar="year")
+
+features_parts <- list.files("data/clean/antipoverty/features", full.names = T, pattern = ".csv") 
+features <- do.call(rbind, lapply(features_parts, read.csv))
+
+data <- data_wo_features %>%
+  left_join(viirs_annual, by = "shrid2") %>%
+  left_join(features, by=c("lat", "lon"))
+
+write.csv(data, "data/clean/antipoverty/data.csv", row.names = F)

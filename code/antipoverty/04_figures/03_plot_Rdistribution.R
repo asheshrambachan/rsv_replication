@@ -10,7 +10,7 @@ suppressPackageStartupMessages({
 source("code/common/ggplot_theme.r")  
 
 # Load data
-data <- read.csv("data/clean/antipoverty/results_pca.csv") %>%
+data <- read.csv("data/clean/antipoverty/pca.csv") %>%
   mutate(
     D = if_else(wave=="Treatment", 1, 0),
     S = if_else(wave == "Holdout", "o", "e")
