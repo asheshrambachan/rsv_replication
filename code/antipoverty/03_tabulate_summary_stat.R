@@ -1,16 +1,22 @@
 ## Balance/descriptive table about dimension of each shrid and 
 ## other observable characteristics 
 
-library(stargazer)
 library(dplyr)
+library(readr)
 library(magrittr)
 
 rm(list = ls())
-
+# 11-28-543-04817-802945
 # TODO: this table is prior to dropping entries with missing y values
-data <- read.csv("data/clean/antipoverty/data_wo_features.csv") %>%
-  select(c("shrid2", "wave", "clusters", "tot_p", "tot_f", "urban")) %>%
-  filter(tot_p >= 100) # Identify and remove small shrid based on population size i.e filter out all shrids with pop size of 100 or lower
+data <- read_csv(
+  "data/clean/antipoverty/data.csv",
+  col_select = c("shrid2", "wave", "clusters", "tot_p", "tot_f", "urban", "Y05k", "Y10k", "Ycons"),
+  show_col_types = F
+  ) %>%
+  filter(
+    # tot_p >= 100,
+    # !(is.na(Y05k) | is.na(Y10k) | is.na(Ycons))
+    ) # Identify and remove small shrid based on population size i.e filter out all shrids with pop size of 100 or lower
 
 tab <- data %>% # there are 28 shrids that should be dropped?
   mutate(
@@ -36,8 +42,13 @@ tab <- data %>% # there are 28 shrids that should be dropped?
   t(.) 
 
 library(kableExtra)
-kable(tab, align = "c", format = "latex", linesep="", booktabs=T, 
+latex_tab <- kable(tab, align = "c", format = "latex", linesep="", booktabs=T, 
       label = "summaries", 
       caption = "Village summary statistics."
       ) %>%
-  row_spec(2, hline_after = TRUE, extra_latex_after = "%") 
+  row_spec(2, hline_after = TRUE, extra_latex_after = "%")
+
+# Save LaTeX table
+output_path <- "output/tables/antipoverty_village_summary_stat.tex"
+save_kable(latex_tab, output_path)
+cat(sprintf("Saved LaTeX table to: %s\n", output_path))

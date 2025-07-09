@@ -1,3 +1,5 @@
+library(boot)
+
 surrogate_coef <- function(D, Y){
   Y_given_D1 = mean(Y * D, na.rm = T) / mean(D, na.rm = T)
   Y_given_D0 = mean(Y * (1-D), na.rm = T) / mean(1-D, na.rm = T)

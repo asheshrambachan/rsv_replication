@@ -1,4 +1,6 @@
-library(boot)
+suppressPackageStartupMessages({
+  library(boot)
+})
 source("code/antipoverty/utils/first_step_fun.R")
 source("code/antipoverty/utils/second_step_fun.R")
 source("code/antipoverty/utils/cluster_sample.R")

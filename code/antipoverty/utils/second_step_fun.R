@@ -1,5 +1,3 @@
-
-library(randomForest)
 source("code/antipoverty/utils/helper_fun.R")
 
 second_step_fun <- function(

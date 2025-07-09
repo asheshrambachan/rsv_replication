@@ -48,10 +48,13 @@ Note: Due to licensing restrictions (CC BY-NC-SA 4.0), the raw and processed dat
 	- Shrid Polygons
 3. Navigate to **Night-time lights**, and download the `CSV` format for:
 	- VIIRS Night Lights (2012 - 2021)
-4. Navigate to **SECC consumption**, and download the `CSV` format for:
+4. Navigate to **Socio-Economic and Caste Census (2012)**, and download the `CSV` format for:
+    - SECC Rural
+    - SECC Urban
+5. Navigate to **SECC consumption**, and download the `CSV` format for:
     - SECC Rural Consumption
     - SECC Urban Consumption
-5. Replace the placeholder folder in `./data/raw/shrug`  with the unzipped folders.
+6. Replace the placeholder folder in `./data/raw/shrug`  with the unzipped folders.
 
 ## Replication Options
 
@@ -118,5 +121,4 @@ This repository contains proprietary data that is intended for internal use only
 - [ ] Add `boot.pval` to conda env
 - [ ] Add a codebook to data in kelseyjack_et_al using the [google doc file](Crop Burning Application Notes)
 - [ ] Change google doc to private
-- [ ] replace `buffer_holdout` with `real`
-- [ ] replace `random` with `synthetic`
+- [ ] repeat the analysis using the new data from shrug

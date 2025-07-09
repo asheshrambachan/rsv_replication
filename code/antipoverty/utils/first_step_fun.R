@@ -1,4 +1,6 @@
+suppressPackageStartupMessages({
 library(randomForest)
+})
 source("code/antipoverty/utils/helper_fun.R")
 
 first_step_fun <- function(X_train, D_train, Y_train, X_test, classwt=c(50,1), ntree=100){
