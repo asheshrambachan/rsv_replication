@@ -6,17 +6,13 @@
   - `antipoverty/`
   - `cropburn/`
   - `publications/`
-  - `common`
-- `data/`: Raw and cleaned data files.  
-  - `clean/`: Cleaned experiment data, cleaned shapefiles, simulation data, and data codebooks.
+- `data/`: Raw and cleaned data files.
+  - `raw`: Original replication packages, SHRUG shapefiles, ... etc 
+  - `interim` 
+  - `processed/`: Cleaned experiment data, cleaned shapefiles, simulation data, and data codebooks.
     - `antipoverty/`
     - `cropburn/`
     - `publications_data.csv`
-  - `raw`: Original replication packages, SHRUG shapefiles, ...
-    - `antipoverty/`
-    - `cropburn/`
-    - `shurg/`
-    - `literature_review.xlsx`
 - `output`: Contains tables and figures generated from the analysis.
   - `figures`
   - `tables`
