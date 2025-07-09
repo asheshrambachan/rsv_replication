@@ -12,7 +12,7 @@ source("code/cropburn/utils/boot_summary.r")
 
 for (R_var in c("R_max", "R_bal")){
   # Load bootstrapped estimates
-  coef_boot <- readRDS(sprintf("data/clean/cropburn/te_bootstrap_%s.rds", gsub("_", "", R_var)))
+  coef_boot <- readRDS(sprintf("data/processed/cropburn/te_bootstrap_%s.rds", gsub("_", "", R_var)))
   
   # Create a modelsummary-formatted list of boot coefficient summaries
   tab <- modelsummary(

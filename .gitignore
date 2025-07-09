@@ -7,49 +7,52 @@ rsv_replication.Rproj
 
 paper.pdf
 
-data/raw/shrug/shrug-ec13-csv
-data/raw/shrug/shrug-pc11dist-poly-shp
-data/raw/shrug/shrug-pc11subdist-poly-shp
-data/raw/shrug/shrug-secc-cons-urban-csv
-data/raw/shrug/shrug-pc11-village-poly-shp
-data/raw/shrug/shrug-pc11state-poly-shp
-data/raw/shrug/shrug-secc-cons-rural-csv
-data/raw/shrug/shrug-shrid-poly-shp
+data/raw/shrug-ec13-csv
+data/raw/shrug-pc11dist-poly-shp
+data/raw/shrug-pc11subdist-poly-shp
+data/raw/shrug-secc-cons-urban-csv
+data/raw/shrug-pc11-village-poly-shp
+data/raw/shrug-pc11state-poly-shp
+data/raw/shrug-secc-cons-rural-csv
+data/raw/shrug-shrid-poly-shp
 
-data/raw/shrug/shrug-viirs-annual-csv/*
-data/raw/shrug/shrug-viirs-annual-csv_v2/*
+data/raw/shrug-viirs-annual-csv/*
+data/raw/shrug-viirs-annual-csv_v2/*
 
-data/raw/shrug/shrug-secc-mord-rural-csv/*
-data/raw/shrug/shrug-secc-parsed-urban-csv/*
+data/raw/shrug-secc-mord-rural-csv/*
+data/raw/shrug-secc-parsed-urban-csv/*
 
-data/raw/cropburn/jacketal_replication_package/Ado/*
-data/raw/cropburn/jacketal_replication_package/Do/*
-data/raw/cropburn/jacketal_replication_package/Output/*
+data/raw/shrug-viirs-annual-csv_v2/*
 
-data/raw/cropburn/jacketal_replication_package/Data/Analysis/merged_all.dta
-data/raw/cropburn/jacketal_replication_package/Data/Baseline/*
-data/raw/cropburn/jacketal_replication_package/Data/Census/*
-data/raw/cropburn/jacketal_replication_package/Data/Endline/*
-data/raw/cropburn/jacketal_replication_package/Data/Intervention/*
-data/raw/cropburn/jacketal_replication_package/Data/Listing/*.xlsx
-data/raw/cropburn/jacketal_replication_package/Data/Listing/?isting_*
-data/raw/cropburn/jacketal_replication_package/Data/Listing/preloads*
-data/raw/cropburn/jacketal_replication_package/Data/Listing/vil_data.dta
-data/raw/cropburn/jacketal_replication_package/Data/ML/*
-data/raw/cropburn/jacketal_replication_package/Data/Monitoring/*
-data/raw/cropburn/jacketal_replication_package/Data/Spotchecks/*
+data/raw/shrug-shrid-keys-csv/*
 
-data/raw/antipoverty/muralidharanetal_replication_package/*
+data/raw/jacketal_replication_package/Ado/*
+data/raw/jacketal_replication_package/Do/*
+data/raw/jacketal_replication_package/Output/*
 
-data/clean/cropburn/villages/*
-data/clean/cropburn/districts/*
+data/raw/jacketal_replication_package/Data/Analysis/merged_all.dta
+data/raw/jacketal_replication_package/Data/Baseline/*
+data/raw/jacketal_replication_package/Data/Census/*
+data/raw/jacketal_replication_package/Data/Endline/*
+data/raw/jacketal_replication_package/Data/Intervention/*
+data/raw/jacketal_replication_package/Data/Listing/*.xlsx
+data/raw/jacketal_replication_package/Data/Listing/?isting_*
+data/raw/jacketal_replication_package/Data/Listing/preloads*
+data/raw/jacketal_replication_package/Data/Listing/vil_data.dta
+data/raw/jacketal_replication_package/Data/ML/*
+data/raw/jacketal_replication_package/Data/Monitoring/*
+data/raw/jacketal_replication_package/Data/Spotchecks/*
 
-data/clean/antipoverty/state/*
-data/clean/antipoverty/districts/*
-data/clean/antipoverty/shrids/*
+data/raw/muralidharanetal_replication_package/*
 
-data/clean/antipoverty/simulations/*
-data/clean/antipoverty/features/*
-data/clean/antipoverty/data.csv
+data/processed/cropburn/villages/*
+data/processed/cropburn/districts/*
 
-data/raw/antipoverty/features/\[RAW] Centroid_features.csv
+data/processed/poverty/state/*
+data/processed/poverty/districts/*
+data/processed/poverty/shrids/*
+
+data/processed/poverty/data.csv
+
+data/interim/poverty/features/\[RAW] Centroid_features.csv
+data/processed/poverty/pca_v1.csv

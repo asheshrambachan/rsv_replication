@@ -10,11 +10,11 @@ suppressPackageStartupMessages({
   library(ggtext)
   library(readr)
 })
-source("code/common/ggplot_theme.r")  
+source("code/ggplot_theme.r")  
 
 # Load data and collapse to village level
 data <- read_csv(
-  "data/clean/cropburn/data.csv",
+  "data/processed/cropburn/data.csv",
   col_types = cols(pc11_tv_id = "c"),
   col_select = c(pc11_tv_id, D, S)
   ) %>%
@@ -44,7 +44,7 @@ fig_a <- ggplot() +
     )
 
 # Save figure
-output_path <- "output/figures/cropburn_maps/exp_only.jpeg"
+output_path <- "output/figures/cropburn/cropburn_map_Se.jpeg"
 dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
 ggsave(output_path, plot = fig_a, height = 4, width = 3.9)
 cat(sprintf("Saved figure to: %s\n", output_path))
@@ -59,7 +59,7 @@ fig_b <- ggplot() +
     )
 
 # Save figure
-output_path <- "output/figures/cropburn_maps/exp_and_obs.jpeg"
+output_path <- "output/figures/cropburn/cropburn_map.jpeg"
 dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
 ggsave(output_path, plot = fig_b, height = 4, width = 3.9)
 cat(sprintf("Saved figure to: %s\n", output_path))

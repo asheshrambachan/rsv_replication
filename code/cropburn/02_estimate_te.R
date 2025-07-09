@@ -8,7 +8,7 @@ source("code/cropburn/utils/cluster_grouped_sample.R")
 source("code/cropburn/utils/treatment_effects.R")
 
 # Load cleaned dataset
-data <- read.csv("data/clean/cropburn/data.csv")
+data <- read.csv("data/processed/cropburn/data.csv")
 
 for (R_var in c("R_max", "R_bal")){
   # Set seed for reproducibility
@@ -34,7 +34,7 @@ for (R_var in c("R_max", "R_bal")){
   print(out)
   
   # Save Output
-  output_path <- sprintf("data/clean/cropburn/te_bootstrap_%s.rds", gsub("_", "", R_var))
+  output_path <- sprintf("data/processed/cropburn/te_bootstrap_%s.rds", gsub("_", "", R_var))
   saveRDS(out, file = output_path)
   cat(sprintf("Saved bootstrap simulations to: %s\n", output_path))
 }
