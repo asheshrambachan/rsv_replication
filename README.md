@@ -58,6 +58,37 @@ Note: Due to licensing restrictions (CC BY-NC-SA 4.0), the raw and processed dat
 
 ## Replication Options
 
+### Poverty Application 
+
+You can replicate the results using one of the following methods:
+
+1. **Full Replication:** Run the following to execute all steps in sequence:
+    ```
+    Rscript ./code/poverty/00_run_all.R
+    ```
+
+2. **Partial Replication:** Run individual scripts for specific steps. 
+
+    1. Data cleaning.
+        ```sh
+        Rscript ./code/poverty/01_clean/00_run_all.R
+        ```
+
+    2. Run simulations. 
+        ```sh
+        Rscript ./code/poverty/02_analysis/00_run_all.R
+        ```
+
+    3. Generate summary statistics table.
+        ```sh
+        Rscript ./code/poverty/03_summary_stats.R
+        ```
+
+    4. Generate figures.
+        ```sh
+        Rscript ./code/poverty/04_figures/00_run_all.R
+        ```
+
 ### Cropburn Application 
 
 You can replicate the results using one of the following methods:
@@ -90,7 +121,7 @@ You can replicate the results using one of the following methods:
         ```
 
 
-### RSV Publication Counts
+### Publication Counts
 
 You can replicate the results using one of the following methods:
 
