@@ -8,25 +8,32 @@ library(dplyr)
 library(readr)
 library(kableExtra)
 
+sample_levels <- c(
+  "Holdout" = "Observational",
+  "Control" = "Experimental: Untreated",
+  "Buffer" = "Experimental: Untreated",
+  "Treatment" = "Experimental: Treated"
+)
+smartcard_levels <- c(
+  "Holdout" = "N/A",
+  "Control" = "2012",
+  "Buffer" = "2011",
+  "Treatment" = "2010"
+)
+
 data <- read_csv(
   "data/processed/poverty/data.csv",
-  col_select = c("shrid2", "wave", "clusters", "tot_p", "tot_f", "urban"),
+  col_select = c("shrid2", "wave", "tot_p", "tot_f", "urban"),
   show_col_types = F
-  )
-
-tab <- data %>% # there are 28 shrids that should be dropped?
+  ) %>% 
   mutate(
-    Sample = factor(
-      wave, 
-      levels = c("Holdout", "Control", "Buffer", "Treatment"),
-      labels = c("Observational", "Experimental: Untreated", "Experimental: Untreated", "Experimental: Treated")
-    ),
-    Smartcards = factor(
-      wave, 
-      levels = c("Holdout", "Control", "Buffer", "Treatment"),
-      labels = c("N/A", "2012", "2011", "2010")
-    )
+    Sample = recode_factor(wave, !!!sample_levels),
+    Smartcards = recode_factor(wave, !!!smartcard_levels)
   ) %>%
+  arrange(desc(urban)) %>%  # So that Urban==1 comes first, # Note: there are 15 shrids that appear as both urban and rural. 
+  distinct(shrid2, .keep_all = T) 
+
+tab <- data %>% 
   group_by(Sample, Smartcards) %>%
   summarise(
     "Number of villages" = n(),
@@ -35,7 +42,7 @@ tab <- data %>% # there are 28 shrids that should be dropped?
     "Average fraction urban" = round(mean(urban),3),
     .groups = "drop"
   ) %>%
-  t(.) 
+  t()
 
 latex_tab <- kable(tab, align = "c", format = "latex", linesep="", booktabs=T, 
       label = "summaries", 

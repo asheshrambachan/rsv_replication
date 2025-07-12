@@ -36,7 +36,7 @@ for(n in c(1000, 2000, 3000)){
       set.seed(b)
       draw <- DGP(n = n, tau = tau, X = X, D = D, Y = Y) 
 
-      set.seed(123)
+      # set.seed(123)
       rsv_surrogate_cv(X = draw$X, D = draw$D, Y = draw$Y, nfold = 5, se.boot = F)
     }
     

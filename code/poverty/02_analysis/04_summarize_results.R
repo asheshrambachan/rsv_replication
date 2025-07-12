@@ -7,7 +7,7 @@ alpha <- 0.05
 # Initialize list to store rows
 results <- list()
 
-for (Y in c("Ycons", "Ylow", "Ymid")){
+for (Y in c("Ycons", "Ylowinc", "Ymidinc")){
   model <- readRDS(sprintf("data/interim/poverty/rsv_vs_benchmark/benchmark_%s.rds", Y))
   
   coef <- unname(coef(model)[2])
@@ -21,15 +21,14 @@ for (Y in c("Ycons", "Ylow", "Ymid")){
     S = NA,
     Y = Y,
     coef = coef,
+    se = se,
     lci = lci,
     uci = uci,
     denominator_coef = NA,
     denominator_lci = NA,
     denominator_uci = NA
   )
-}
-
-for (Y in c("Ycons", "Ylow", "Ymid")){
+  
   for (S in c("Sreal", "Ssynth")){
     model <- readRDS(sprintf("data/interim/poverty/rsv_vs_benchmark/rsv_%s_%s.rds", Y, S))
   
@@ -49,6 +48,7 @@ for (Y in c("Ycons", "Ylow", "Ymid")){
       S = S,
       Y = Y,
       coef = coef,
+      se = se,
       lci = lci,
       uci = uci,
       denominator_coef = denominator_coef,
@@ -84,7 +84,7 @@ for (S in c("Ssynth", "Sreal")){
 # Combine all rows into a single data frame
 summary_df <- do.call(rbind, results)
 
-write.csv(summary_df, "data/interim/poverty/representations.csv", row.names = F)
+write.csv(summary_df, "data/processed/poverty/representations.csv", row.names = F)
 
 
 ####

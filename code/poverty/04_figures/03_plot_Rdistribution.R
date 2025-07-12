@@ -45,7 +45,7 @@ linetypes <- c(
 
 for (d in c(0,1)){
   for (y in c(0,1)){
-    for (Y_var in c("Ycons","Ylow", "Ymid")){
+    for (Y_var in c("Ycons","Ylowinc", "Ymidinc")){
       data_y <- data %>%
         mutate(
           Y = !!sym(Y_var),

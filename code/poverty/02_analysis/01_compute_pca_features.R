@@ -9,25 +9,39 @@ options(readr.show_col_types = F)
 
 # === Load Data ===
 data <- read_csv("data/processed/poverty/data.csv")
-
+  
 # === Perform PCA on feature columns ===
-pca_results <- data %>%
+features <- data %>%
   select(
+    "shrid2",
     starts_with("viirs_annual_"),
     starts_with("feature_")
-    ) %>%
-  select(where(~ n_distinct(.) > 1)) %>% # Remove constant columns
-  prcomp(., center = T, scale. = T)
+  ) %>%
+  distinct() # to keep only 1 copy of the shrids that appear as urban and rural
 
-# === Combine PCA output with key columns ===
-data_with_pca <- data %>% 
-  select(shrid2, lat, lon, Ycons, Ylow, Ymid, wave, D) %>%
-  mutate(
-    R_PC1 = pca_results$x[, "PC1"],
-    R_PC1_scaled = scale(pca_results$x[, "PC1"])
+print(nrow(features))
+
+features_id <- features$shrid2
+
+features <- features %>% 
+  select(-shrid2) %>%
+  select(where(~ n_distinct(.) > 1)) # Remove constant columns
+
+pca_results <- prcomp(features, center = T, scale. = T)
+R_PC1 <- pca_results$x[, "PC1"]
+
+# === Combine PCA output with shrid2 id and other metadata columns ===
+data_pca <- data.frame(
+  shrid2 = features_id,
+  R_PC1 = R_PC1,
+  R_PC1_scaled = scale(R_PC1)
   )
+
+data_pca_metadata <- data %>% 
+  select(shrid2, lat, lon, Ycons, Ylowinc, Ymidinc, wave, D) %>%
+  left_join(data_pca, by = "shrid2")
 
 # === Save Output ===
 path <- "data/processed/poverty/pca.csv"
-write.csv(data_with_pca, path, row.names = F)
+write.csv(data_pca_metadata, path, row.names = F)
 cat(sprintf("Saved PCA results to: %s\n", path))

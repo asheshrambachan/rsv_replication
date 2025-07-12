@@ -25,7 +25,7 @@ data <- data %>%
 
 
 # === Benchmark Regressions ===
-for (Y_var in c("Ycons", "Ylow", "Ymid")){
+for (Y_var in c("Ycons", "Ylowinc", "Ymidinc")){
   model <- feols(
     fml = as.formula(paste0(Y_var, " ~ D")), 
     data = data, 
@@ -36,14 +36,14 @@ for (Y_var in c("Ycons", "Ylow", "Ymid")){
   output_path <- sprintf("data/interim/poverty/rsv_vs_benchmark/benchmark_%s.rds", Y_var)
   dir.create(dirname(output_path), recursive = T, showWarnings = F)
   saveRDS(model, output_path)
-  cat(sprintf("[BENCHMARK] %-5s → coef = %.3f; se = %.3f → saved to %s\n", 
+  cat(sprintf("[BENCHMARK] %-7s → coef = %.3f; se = %.3f → saved to %s\n", 
               Y_var, coef(model)[2], model$se[2], output_path))
 }
 
 
 # === RSV Estimation with Parallelization ===
 sim_grid <- expand.grid(
-  Y = c("Ycons", "Ylow", "Ymid"), 
+  Y = c("Ycons", "Ylowinc", "Ymidinc"), 
   S = c("Sreal", "Ssynth"), 
   stringsAsFactors = F
   )
@@ -101,6 +101,6 @@ stopCluster(cl)
 
 for (i in 1:length(results)){
   out <- results[[i]]
-  cat(sprintf("[RSV] %-5s %-6s → coef = %.3f; se = %.3f → saved to %s\n", 
+  cat(sprintf("[RSV] %-7s %-6s → coef = %.3f; se = %.3f → saved to %s\n", 
               out$Y_var, out$S_var, out$coef, out$se, out$output_path))
 }

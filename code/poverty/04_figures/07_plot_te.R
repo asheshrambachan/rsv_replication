@@ -21,7 +21,7 @@ data <- read.csv("data/processed/poverty/rsv_vs_benchmark.csv") %>%
     estimator_S = factor(estimator_S, levels = guide$breaks, labels = guide$labels)
   )
 
-for (Y_var in c("Ycons", "Ylow", "Ymid")){
+for (Y_var in c("Ycons", "Ylowinc", "Ymidinc")){
   fig <- data %>%
     filter(Y==Y_var) %>%
     ggplot(aes(x=estimator_S, y=coef, shape=estimator_S, color=estimator_S)) +

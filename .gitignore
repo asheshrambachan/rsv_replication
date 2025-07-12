@@ -7,24 +7,8 @@ rsv_replication.Rproj
 
 paper.pdf
 
-data/raw/shrug-ec13-csv
-data/raw/shrug-pc11dist-poly-shp
-data/raw/shrug-pc11subdist-poly-shp
-data/raw/shrug-secc-cons-urban-csv
-data/raw/shrug-pc11-village-poly-shp
-data/raw/shrug-pc11state-poly-shp
-data/raw/shrug-secc-cons-rural-csv
-data/raw/shrug-shrid-poly-shp
-
-data/raw/shrug-viirs-annual-csv/*
-data/raw/shrug-viirs-annual-csv_v2/*
-
-data/raw/shrug-secc-mord-rural-csv/*
-data/raw/shrug-secc-parsed-urban-csv/*
-
-data/raw/shrug-viirs-annual-csv_v2/*
-
-data/raw/shrug-shrid-keys-csv/*
+data/raw/shrug_v2.0
+data/raw/shrug_v2.1
 
 data/raw/jacketal_replication_package/Ado/*
 data/raw/jacketal_replication_package/Do/*
@@ -43,7 +27,24 @@ data/raw/jacketal_replication_package/Data/ML/*
 data/raw/jacketal_replication_package/Data/Monitoring/*
 data/raw/jacketal_replication_package/Data/Spotchecks/*
 
-data/raw/muralidharanetal_replication_package/*
+# data/raw/muralidharanetal_replication_package/*
+data/raw/muralidharanetal_replication_package/20141346_data/analysis_code/*
+data/raw/muralidharanetal_replication_package/20141346_data/compile_tables_figures/*
+data/raw/muralidharanetal_replication_package/20141346_data/utilities/*
+data/raw/muralidharanetal_replication_package/20141346_data/master_analysis.do
+data/raw/muralidharanetal_replication_package/20141346_data/data/a*.dta
+data/raw/muralidharanetal_replication_package/20141346_data/data/bl*.dta
+data/raw/muralidharanetal_replication_package/20141346_data/data/balance-for-ap-mandal-comparison-from-01-village-directory.dta
+data/raw/muralidharanetal_replication_package/20141346_data/data/c*.dta
+data/raw/muralidharanetal_replication_package/20141346_data/data/d*.dta
+data/raw/muralidharanetal_replication_package/20141346_data/data/e*.dta
+data/raw/muralidharanetal_replication_package/20141346_data/data/g*.dta
+data/raw/muralidharanetal_replication_package/20141346_data/data/h*.dta
+data/raw/muralidharanetal_replication_package/20141346_data/data/j*.dta
+data/raw/muralidharanetal_replication_package/20141346_data/data/n*.dta
+data/raw/muralidharanetal_replication_package/20141346_data/data/o*.dta
+data/raw/muralidharanetal_replication_package/20141346_data/data/r*.dta
+data/raw/muralidharanetal_replication_package/20141346_data/data/s*.dta
 
 data/processed/cropburn/villages/*
 data/processed/cropburn/districts/*
@@ -56,3 +57,4 @@ data/processed/poverty/data.csv
 
 data/interim/poverty/features/\[RAW] Centroid_features.csv
 data/processed/poverty/pca_v1.csv
+incorrect_secc_merging.csv

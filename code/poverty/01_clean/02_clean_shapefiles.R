@@ -14,7 +14,7 @@ save_shapefile <- function(sf_object, path) {
 
 
 # === Clean and Save State Shapefile ===
-state <- st_read("data/raw/shrug-pc11state-poly-shp/state.shp", quiet = T) %>%
+state <- st_read("data/raw/shrug_v2.1/shrug-pc11state-poly-shp/state.shp", quiet = T) %>%
   filter(s_name=="Andhra Pradesh")
 
 save_shapefile(state, "data/processed/poverty/state/state.shp")
@@ -25,7 +25,7 @@ d_rename <- c(
   "Sri Potti Sriramulu Nellore" =  "Nellore",
   "Y.S.R." = "Kadapa"
 )
-districts <- st_read("data/raw/shrug-pc11dist-poly-shp/district.shp", quiet = T) %>%
+districts <- st_read("data/raw/shrug_v2.1/shrug-pc11dist-poly-shp/district.shp", quiet = T) %>%
   filter(pc11_s_id %in% state$pc11_s_id) %>%
   mutate(d_name = recode(d_name, !!!d_rename))
 
@@ -37,7 +37,7 @@ shrid_ids <- read_csv("data/processed/poverty/data.csv", col_select = shrid2) %>
   pull(shrid2) %>%
   unique()
 
-shrids <- st_read("data/raw/shrug-shrid-poly-shp/shrid2_open.shp", quiet = T) %>%
+shrids <- st_read("data/raw/shrug_v2.0/shrug-shrid-poly-gpkg/shrid2_open.gpkg", quiet = T) %>%
   filter(shrid2 %in% shrid_ids)
 
 save_shapefile(shrids, "data/processed/poverty/shrids/shrids.shp")
