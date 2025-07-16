@@ -3,119 +3,67 @@ suppressPackageStartupMessages({
   library(randomForest)
   library(boot)
 })
-
-isobs <- function(x) !is.na(x)
-isexp <- function(x) is.na(x)
-
-create_outcomes <- function(D, Y){
-  isobsD <- isobs(D)
-  isobsY <- isobs(Y)
-  D[isexp(D)] <- 0
-  Y[isexp(Y)] <- 0
-  return(data.frame(D, Y, isobsD, isobsY))
-}
-
-get_emp_prob <- function(x) list(
-  D1 = mean(x$D * x$isobsD),
-  D0 = mean((1 - x$D) * x$isobsD),
-  Y1 = mean(x$Y * x$isobsY),
-  Y0 = mean((1 - x$Y) * x$isobsY)
-)
-
-get_Q <- function(emp_p, pred) list(
-  D = pred$isobsD * (pred$D/emp_p$D1 - (1 - pred$D)/emp_p$D0),
-  Y = pred$isobsY * (pred$Y/emp_p$Y1 - (1 - pred$Y)/emp_p$Y0)
-)
-
-get_sigma2 <- function(emp_p, pred, theta_1st) {
-  term1 <- pred$isobsD * (pred$D/emp_p$D1**2 + (1 - pred$D)/emp_p$D0**2)
-  term2 <- pred$isobsY * theta_1st**2 * (pred$Y/emp_p$Y1**2 + (1 - pred$Y)/emp_p$Y0**2)
-  sigma2 = term1 + term2
-  return(sigma2)
-}
-
-get_Delta <- function(true_p, emp_p) list(
-  e = true_p$isobsD * (true_p$D/emp_p$D1 - (1 - true_p$D)/emp_p$D0),
-  o = true_p$isobsY * (true_p$Y/emp_p$Y1 - (1 - true_p$Y)/emp_p$Y0)
-)
-
-cluster_sample <- function(data, mle=list(cluster_var="clusters_test")) {
-  # Extract unique cluster IDs from the specified cluster variable
-  cluster_var <- mle$cluster_var 
-  cluster_ids <- unique(data[[cluster_var]])
-  
-  # Sample cluster IDs with replacement. The number of sampled clusters is equal to the total number of unique clusters.
-  sampled_clusters <- sample(x = cluster_ids, size = length(cluster_ids), replace = TRUE)
-  
-  # For each sampled cluster, extract all observations and combine them into a single data frame
-  data[data[[cluster_var]] %in% sampled_clusters, ]
-}
+source("code/poverty/utils/rsv_helpers.R")
+source("code/poverty/utils/cluster_sample.R")
 
 first_step_fun <- function(X_train, D_train, Y_train, X_test, classwt=c(50,1), ntree=100){
-  
   train <- create_outcomes(D_train, Y_train)
   
-  # Train treatment model and predict probabilities
-  model_D <- randomForest(
-    x = X_train[train$isobsD, ], 
-    y = as.factor(train$D[train$isobsD]), 
-    ntree = ntree
-  )
   
-  # Train outcome model with class weights and predict probabilities
-  model_Y <- randomForest(
-    x = X_train[train$isobsY, ], 
-    y = as.factor(train$Y[train$isobsY]), 
+  ## Algorithm 1, Step 2 (b) 
+  
+  ## PRED_Y(R) ~ P(Y = 1 | S = o, R)
+  model_Y_So <- randomForest(
+    x = X_train[train$So, ], 
+    y = as.factor(train$Y_So[train$So]), 
     classwt = classwt,
     ntree = ntree, 
   )
   
-  # Train model for D if needed and predict probabilities
-  # if (any(isexp(train$D))) { # this is always false since D[isexp(D)] <- 0
-  #   model_isobsD <- randomForest(
-  #     x = X_train, 
-  #     y = as.factor(train$isobsD), 
-  #     ntree = ntree
-  #   )
-  # }
+  ## PRED_D(R) ~ P(D = 1 | S = e, R)
+  model_D_Se <- randomForest(
+    x = X_train[train$Se, ], 
+    y = as.factor(train$D_Se[train$Se]), 
+    ntree = ntree
+  )
   
-  # Train model for Y and predict probabilities
-  model_isobsY <- randomForest(
+  ## PRED_S(R) ~ P(S = o | R)
+  model_So <- randomForest(
     x = X_train, 
-    y = as.factor(train$isobsY), 
+    y = as.factor(train$So), 
     ntree = ntree
   )
   
   # Store train predictions
   pred_train <- data.frame(
-    D = predict(model_D, X_train, type = "prob")[, 2],
-    Y = predict(model_Y, X_train, type = "prob")[, 2],
-    isobsD = train$isobsD, # TODO: this isn't train predictions. is this correct?
-    isobsY = train$isobsY # TODO: this isn't train predictions. is this correct?
-  )
-  
-  # Store test predictions
-  pred_test <- data.frame(
-    D = predict(model_D, X_test, type = "prob")[, 2], 
-    Y = predict(model_Y, X_test, type = "prob")[, 2], 
-    isobsD = rep(1, nrow(X_test)), # predict(model_isobsD, X_test, type = "prob")[, 2]
-    isobsY = predict(model_isobsY, X_test, type = "prob")[, 2]
+    D_Se = predict(model_D_Se, X_train, type = "prob")[, 2],
+    Y_So = predict(model_Y_So, X_train, type = "prob")[, 2],
+    Se = train$Se, # TODO: this isn't train predictions. is this correct?
+    So = train$So # TODO: this isn't train predictions. is this correct?
   )
   
   emp_p_train <- get_emp_prob(train)
-  Q_train <- get_Q(emp_p_train, pred_train)
+  Delta_pred <- get_Delta(pred_train, emp_p_train)
+  # Algorithm 1, Step 2 (c)
+  coef_init <- mean(Delta_pred$e * Delta_pred$o) / mean(Delta_pred$o**2)
   
-  theta_1st <- mean(Q_train$D * Q_train$Y)/mean(Q_train$Y**2)
+  # Store test predictions
+  pred_test <- data.frame(
+    D_Se = predict(model_D_Se, X_test, type = "prob")[, 2], 
+    Y_So = predict(model_Y_So, X_test, type = "prob")[, 2], 
+    Se = rep(1, nrow(X_test)), # predict(model_Se, X_test, type = "prob")[, 2]
+    So = predict(model_So, X_test, type = "prob")[, 2]
+  )
   
   return(list(
-    theta_1st = theta_1st,
+    coef_init = coef_init,
     pred_test = pred_test
   ))
 }
 
 second_step_fun <- function(
     boot_data, D_test = NULL, Y_test = NULL, pred_test = NULL, 
-    theta_1st, delta
+    coef_init, delta
 ){
   
   is.boot <- !missing(boot_data)
@@ -128,22 +76,24 @@ second_step_fun <- function(
   test <- create_outcomes(D_test, Y_test)
   
   emp_p_test <- get_emp_prob(test)
-  Q_test <- get_Q(emp_p_test, pred_test)
+  Delta_pred <- get_Delta(pred_test, emp_p_test)
   
-  sigma2 <- get_sigma2(emp_p_test, pred_test, theta_1st)
+  sigma2 <- get_sigma2(emp_p_test, pred_test, coef_init)
   Delta <- get_Delta(test, emp_p_test)
-  H <- Q_test$Y / pmax(sigma2, delta)
+  H <- Delta_pred$o / pmax(sigma2, delta)
   
   numerator <- mean(Delta$e * H)
   denominator <- mean(Delta$o * H)
-  theta_2nd <- numerator / denominator
+  
+  coef <- numerator / denominator
   
   if (is.boot)
-    return(c(theta_2nd = theta_2nd, denominator = denominator))
+    return(c(coef = coef, denominator = denominator))
   else
     return(list(
-      theta_2nd = theta_2nd,
+      coef = coef,
       denominator = denominator,
+      Delta = Delta,
       H = H
     ))
 }
@@ -161,19 +111,19 @@ rsv_fun <- function(
     stop("se.boot is true but no clusters_test was passed.")
   
   first_step <- first_step_fun(X_train, D_train, Y_train, X_test, classwt, ntree) 
-  Y_test_pred <- first_step$pred_test$Y
+  Y_test_pred <- first_step$pred_test$Y_So
   
   second_step <- second_step_fun(
     D_test = D_test, Y_test = Y_test, pred_test = first_step$pred_test, 
-    theta_1st = first_step$theta_1st, delta = delta)
+    coef_init = first_step$coef_init, delta = delta)
   
   out <- list(
-    coef = second_step$theta_2nd, # same as theta_2nd
-    theta_1st = first_step$theta_1st,
-    theta_2nd = second_step$theta_2nd,
+    coef = second_step$coef,
+    coef_init = first_step$coef_init,
     denominator = second_step$denominator,
     H = second_step$H,
-    Y_test_pred = Y_test_pred
+    Y_test_pred = Y_test_pred,
+    Delta = second_step$Delta
   )
   
   # Compute standard errors via bootstrap 
@@ -187,7 +137,7 @@ rsv_fun <- function(
         first_step$pred_test, 
         clusters_test
         ),
-      theta_1st = first_step$theta_1st,   
+      coef_init = first_step$coef_init,   
       delta = delta, 
       mle = list(cluster_var="clusters_test"),
       R = B,
@@ -197,13 +147,12 @@ rsv_fun <- function(
     
     # Identify coefficients index
     coef_names <- names(second_step_boot$t0)
-    theta_2nd_index <- which(coef_names == "theta_2nd")
+    coef_index <- which(coef_names == "coef")
     denominator_index <- which(coef_names == "denominator")
     
-    out$se <- sd(second_step_boot$t[, theta_2nd_index]) # same as theta_2nd_se
-    out$theta_2nd_se <- sd(second_step_boot$t[, theta_2nd_index])
+    out$se <- sd(second_step_boot$t[, coef_index]) 
     out$denominator_se <- sd(second_step_boot$t[, denominator_index])
   }
-  
+
   return(out)
 }

@@ -28,7 +28,7 @@ DGP <- function(n, X, D, Y, tau = 0) {
   ))
 }
 
-rsv_surrogate_cv <- function(
+cv_rsv_surrogate <- function(
     X, D, Y, nfold = 5, 
     clusters = NULL, se.boot = FALSE, ...
   ){
@@ -71,12 +71,12 @@ rsv_surrogate_cv <- function(
   }
   
   rsv <- list(
-    coef_cv = mean(sapply(rsv, function(x) x$coef)),
+    coef_cv = mean(sapply(rsv, function(x) x$coef), na.rm=T),
     out = rsv
   )
   
   surrogate <- list(
-    coef_cv = mean(sapply(surrogate, function(x) x$coef)),
+    coef_cv = mean(sapply(surrogate, function(x) x$coef), na.rm=T),
     out = surrogate
   )
   

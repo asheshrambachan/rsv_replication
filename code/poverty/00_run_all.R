@@ -1,7 +1,17 @@
-source("code/antipoverty/01_clean_data.R")
+source("code/poverty/01_data_prep/clean_base_data.R")
+source("code/poverty/01_data_prep/clean_shapefiles.R")
+source("code/poverty/01_data_prep/get_features.R")
+source("code/poverty/01_data_prep/merge_features.R")
+
+source("code/poverty/02_analysis/compute_pca_features.R")
+
+source("code/poverty/03_outputs/plot_rsv_distribution.R")
+
+
+
+
 source("code/antipoverty/03_tabulate_summary_stat.R")
 
-source("code/antipoverty/02_analysis/01_pca.R")
 source("code/antipoverty/04_figures/01_plot_assumption1_maps.R")
 source("code/antipoverty/04_figures/02_plot_assumption2_maps.R")
 source("code/antipoverty/04_figures/03_plot_Rdistribution.R")

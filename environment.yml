@@ -1,0 +1,19 @@
+name: rsv
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - r-base=4.4.3
+  - r-fixest
+  - r-tidyr
+  - r-doparallel
+  - r-boot
+  - r-randomforest
+  - r-readr
+  - r-dplyr
+  - r-sf
+  - r-geosphere
+  - r-devtools
+  - r-argparse
+  # - pip:
+  #   - redivis
