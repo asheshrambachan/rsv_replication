@@ -47,7 +47,7 @@ features <- list.files(
     full.names = T
   ) %>%
   lapply(read_csv) %>%
-  bind_rows() # identical to Sammi's features except for 29 shrids
+  bind_rows() 
 
 
 # -----------------------------------------------------------------------------

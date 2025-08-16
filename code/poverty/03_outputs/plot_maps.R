@@ -1,7 +1,6 @@
-# Clear environment
 rm(list=ls())
 
-# Load libraries, theme, font, and palette
+## Load libraries & theme
 suppressPackageStartupMessages({
   library(ggplot2)
   library(dplyr)
@@ -10,9 +9,13 @@ suppressPackageStartupMessages({
 })
 source("code/ggplot_theme.r")  
 
+# Output directory 
+output_dir <- "outputs/poverty/maps"
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
 # Load data
 data <- read_csv(
-  "data/processed/poverty/data.csv",
+  "data/poverty/processed/poverty_data.csv",
   col_select = c(shrid2, wave, Ycons)
   ) %>%
   mutate(
@@ -47,7 +50,7 @@ fig_a <- ggplot() +
   )
 
 # Save figure
-output_path <- "output/figures/poverty/maps/poverty_map_Se.jpeg"
+output_path <- file.path(output_dir, "poverty_map_Se.jpeg")
 dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
 ggsave(output_path, plot = fig_a, height = 4, width = 4.5)
 cat(sprintf("Saved figure to: %s\n", output_path))
@@ -62,8 +65,7 @@ fig_b <- ggplot() +
   )
 
 # Save figure
-output_path <- "output/figures/poverty/maps/poverty_map.jpeg"
-dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
+output_path <- file.path(output_dir, "poverty_map.jpeg")
 ggsave(output_path, plot = fig_b, height = 4, width = 4.5)
 cat(sprintf("Saved figure to: %s\n", output_path))
 
@@ -77,8 +79,7 @@ fig_a <- ggplot() +
   )
 
 # Save figure
-output_path <- "output/figures/poverty/maps/poverty_map_D0_Ycons0.jpeg"
-dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
+output_path <- file.path(output_dir, "poverty_map_D0_Ycons0.jpeg")
 ggsave(output_path, plot = fig_a, height = 4, width = 4.5)
 cat(sprintf("Saved figure to: %s\n", output_path))
 
@@ -91,7 +92,6 @@ fig_b <- ggplot() +
   )
 
 # Save figure
-output_path <- "output/figures/poverty/maps/poverty_map_D0_Ycons1.jpeg"
-dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
+output_path <- file.path(output_dir, "poverty_map_D0_Ycons1.jpeg")
 ggsave(output_path, plot = fig_b, height = 4, width = 4.5)
 cat(sprintf("Saved figure to: %s\n", output_path))

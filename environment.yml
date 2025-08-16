@@ -6,7 +6,7 @@ dependencies:
   - r-base=4.4.3
   - r-fixest
   - r-tidyr
-  - r-doparallel
+  - r-parallel
   - r-boot
   - r-randomforest
   - r-readr

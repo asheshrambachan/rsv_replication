@@ -57,9 +57,9 @@ study_data <- read_dta(
     subdistrict_name = gsub("[()]", "", gsub(".", " ", tolower(subdistrict_name), fixed = TRUE)),
     wave             = recode_factor(wave, !!!wave_levels),
     D                = case_when(
-      wave == "Treatment"              ~ 1,
-      wave %in% c("Control", "Buffer") ~ 0,
-      TRUE                             ~ NA
+      wave == "Treatment"              ~ 1, # Experimental: Treated
+      wave %in% c("Control", "Buffer") ~ 0, # Experimental: Untreated
+      TRUE                             ~ NA # Holdout (Observational)
     )
   )
 
@@ -72,36 +72,15 @@ shrug_study_data <- shrug_loc %>%
 # -----------------------------------------------------------------------------
 
 ## 3.1 Consumption
-secc_cons_urban <- read.table(
-  "https://dataverse.harvard.edu/api/access/datafile/10742795",
-  sep = "\t", header = TRUE
-) %>%
-  select(shrid2, Ycons_raw = secc_cons_pc_urban) %>%
-  mutate(urban = 1)
-
-secc_cons_rural <- read.table(
+secc_cons <- read.table(
   "https://dataverse.harvard.edu/api/access/datafile/10742743",
   sep = "\t", header = TRUE
 ) %>%
   select(shrid2, Ycons_raw = secc_cons_pc_rural) %>%
   mutate(urban = 0)
 
-secc_cons <- bind_rows(secc_cons_urban, secc_cons_rural)
-
 ## 3.2 Income
-secc_income_urban <- read.table(
-  "https://dataverse.harvard.edu/api/access/datafile/10742848",
-  sep = "\t", header = TRUE
-) %>%
-  select(shrid2, tot_p, tot_f) %>%
-  mutate(
-    urban       = 1,
-    tot_f       = if_else(tot_p == 0, 0, tot_f),
-    Ylowinc_raw = NA,
-    Ymidinc_raw = NA
-  )
-
-secc_income_rural <- read_dta(
+secc_income <- read_dta(
   "https://dataverse.harvard.edu/api/access/datafile/10742876",
   col_select = c(shrid2, tot_p, tot_f, inc_5k_plus_share, inc_10k_plus_share)
 ) %>%
@@ -114,10 +93,8 @@ secc_income_rural <- read_dta(
     tot_f = if_else(tot_p == 0, 0, tot_f)
   )
 
-secc_income <- bind_rows(secc_income_urban, secc_income_rural)
-
 ## 3.3 Merge Consumption and Income
-secc <- full_join(secc_cons, secc_income, by = c("shrid2", "urban"))
+secc <- full_join(secc_cons, secc_income, by = "shrid2")
 
 
 # -----------------------------------------------------------------------------
@@ -131,8 +108,8 @@ data <- shrug_study_data %>%
     Ylowinc = as.integer(Ylowinc_raw == 0),
     Ymidinc = as.integer(Ymidinc_raw == 0),
     Ycons   = as.integer(Ycons_raw <= quantile(Ycons_raw, 0.25, na.rm = TRUE))
-  )
-
+  ) # 8312
+print(quantile(data$Ycons_raw, 0.25, na.rm = TRUE)) # 18946.61 
 
 # -----------------------------------------------------------------------------
 # 5. Export Final Merged Dataset

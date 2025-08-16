@@ -34,14 +34,14 @@ save_shapefile(state, "data/poverty/processed/shapefiles/state.gpkg")
 # -----------------------------------------------------------------------------
 # 2. Clean and Save District Shapefile
 # -----------------------------------------------------------------------------
-district_name_map <- c(
+district_recode <- c(
   "Sri Potti Sriramulu Nellore" = "Nellore",
   "Y.S.R." = "Kadapa"
 )
 
 districts <- st_read("data/poverty/raw/shrug-pc11dist-poly-shp/district.shp", quiet = TRUE) %>%
   filter(pc11_s_id %in% state$pc11_s_id) %>%
-  mutate(d_name = recode(d_name, !!!district_name_map))
+  mutate(d_name = recode(d_name, !!!district_recode))
 
 save_shapefile(districts, "data/poverty/processed/shapefiles/districts.gpkg")
 
@@ -50,7 +50,7 @@ save_shapefile(districts, "data/poverty/processed/shapefiles/districts.gpkg")
 # 3. Clean and Save SHRID2 Shapefile
 # -----------------------------------------------------------------------------
 # Load shrid2 ids for filtering
-shrid_ids <- read_csv("data/poverty/processed/data_wo_features.csv", col_select = shrid2) %>% 
+shrid_ids <- read_csv("data/poverty/processed/base_data.csv", col_select = shrid2) %>% 
   pull(shrid2) %>%
   unique()
 

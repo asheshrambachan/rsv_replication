@@ -1,6 +1,7 @@
 .DS_Store
 .Rproj.user
 .RData
+.RDataTmp
 .Rhistory
 rsv_replication.Rproj
 
@@ -26,6 +27,7 @@ data/poverty/raw/muralidharanetal_replication_package/20141346_data/data/o*.dta
 data/poverty/raw/muralidharanetal_replication_package/20141346_data/data/r*.dta
 data/poverty/raw/muralidharanetal_replication_package/20141346_data/data/s*.dta
 data/poverty/processed/poverty_data.csv
+data/poverty/processed/shapefiles
 
 data/cropburn/raw/shrug*
 data/cropburn/raw/jacketal_replication_package/Ado/*
@@ -44,4 +46,5 @@ data/cropburn/raw/jacketal_replication_package/Data/Listing/vil_data.dta
 data/cropburn/raw/jacketal_replication_package/Data/ML/*
 data/cropburn/raw/jacketal_replication_package/Data/Monitoring/*
 data/cropburn/raw/jacketal_replication_package/Data/Spotchecks/*
+data/cropburn/processed/shapefiles
 

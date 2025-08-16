@@ -9,6 +9,7 @@ source("code/cropburn/utils/treatment_effects.R")
 
 # Load cleaned dataset
 data <- read.csv("data/processed/cropburn/data.csv")
+cores <- min(B, 200, detectCores() - 1)
 
 for (R_var in c("R_max", "R_bal")){
   # Set seed for reproducibility
@@ -29,6 +30,7 @@ for (R_var in c("R_max", "R_bal")){
     R = 5000, # Number of bootstrap replications
     parallel = "multicore",
     sim = "parametric",
+    ncpus = cores
   ) 
   
   print(out)

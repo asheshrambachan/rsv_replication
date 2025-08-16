@@ -3,19 +3,20 @@
 ## Repository Structure
 
 - `code/`: Python and R scripts for cleaning raw data, running the analysis, and generating tables and figures
-  - `antipoverty/`
+  - `poverty/`
   - `cropburn/`
   - `publications/`
 - `data/`: Raw and cleaned data files.
-  - `raw`: Original replication packages, SHRUG shapefiles, ... etc 
-  - `interim` 
-  - `processed/`: Cleaned experiment data, cleaned shapefiles, simulation data, and data codebooks.
-    - `antipoverty/`
-    - `cropburn/`
-    - `publications_data.csv`
-- `output`: Contains tables and figures generated from the analysis.
-  - `figures`
-  - `tables`
+  - `poverty/`
+    - `raw`: Original replication packages and SHRUG shapefiles.
+    - `interim`: Raw rds outputs from simulations
+    - `processed/`: Cleaned data, cleaned shapefiles, cleaned simulation results
+  - `cropburn/`
+    - `raw`: Original replication packages and SHRUG shapefiles
+    - `processed/`: Cleaned data, cleaned shapefiles, cleaned simulation results
+  - `publications/`
+    - `raw`: Original literature file
+    - `processed/`: Cleaned file
 
 ## Getting Started
 
@@ -27,7 +28,7 @@ cd path/to/rsv_replication
 conda update conda
 conda config --set channel_priority strict
 conda env create -f conda_env.yaml
-conda activate rsv_replication
+conda activate rsv
 ```
 
 ### Step 2: Downloading SHRUG Data 
@@ -37,24 +38,17 @@ This directory contains scripts that uses data from [SHRUG v2.1](https://www.dev
 Note: Due to licensing restrictions (CC BY-NC-SA 4.0), the raw and processed data are not included in this repository. To obtain it, follow these steps:
 
 1. Go to the SHRUG Download page [[SHURUG download page](https://www.devdatalab.org/shrug_download/)](https://www.devdatalab.org/shrug_download/)
-2. Navigate to the tab labeled **Open Polygons and Spatial Statistics**, and download the `SHP` format for:
+2. Navigate to the tab labeled **Open Polygons and Spatial Statistics**.
+3. Download the following `SHP` files and place the unzipped folders in `./data/poverty/raw` for:
 	- PC11 State Polygons
     - PC11 District Polygons
 	- PC11 Village Polygons
 	- Shrid Polygons
-3. Navigate to **Night-time lights**, and download the `CSV` format for:
-	- VIIRS Night Lights (2012 - 2021)
-4. Navigate to **Socio-Economic and Caste Census (2012)**, and download the `CSV` format for:
-    - SECC Rural
-    - SECC Urban
-5. Navigate to **SECC consumption**, and download the `CSV` format for:
-    - SECC Rural Consumption
-    - SECC Urban Consumption
-6. Replace the placeholder folder in `./data/raw/shrug`  with the unzipped folders.
-
+4. Download the following `SHP` files and place the unzipped folders in `./data/poverty/raw` for:
+	- PC11 Village Polygons
+	- Shrid Polygons
+  
 ## Replication Options
-
-### Poverty Application 
 
 You can replicate the results using one of the following methods:
 
@@ -63,81 +57,23 @@ You can replicate the results using one of the following methods:
     Rscript ./code/poverty/00_run_all.R
     ```
 
-2. **Partial Replication:** Run individual scripts for specific steps. 
-
-    1. Data cleaning.
-        ```sh
-        Rscript ./code/poverty/01_clean/00_run_all.R
-        ```
-
-    2. Run simulations. 
-        ```sh
-        Rscript ./code/poverty/02_analysis/00_run_all.R
-        ```
-
-    3. Generate summary statistics table.
-        ```sh
-        Rscript ./code/poverty/03_summary_stats.R
-        ```
-
-    4. Generate figures.
-        ```sh
-        Rscript ./code/poverty/04_figures/00_run_all.R
-        ```
-
-### Cropburn Application 
-
-You can replicate the results using one of the following methods:
-
-1. **Full Replication:** Run the following to execute all steps in sequence:
-    ```
-    Rscript ./code/cropburn/00_run_all.R
-    ```
 
 2. **Partial Replication:** Run individual scripts for specific steps. 
 
-    1. Data cleaning.
+    1. Poverty Application
         ```sh
-        Rscript ./code/cropburn/01_clean_data.R
+        Rscript ./code/poverty/00_run_all.R
         ```
 
-    2. Run bootstrap simulations. 
+    2. Cropburn Application 
         ```sh
-        Rscript ./code/cropburn/02_estimate_te.R
+        Rscript ./code/cropburn/00_run_all.R
         ```
 
-    3. Generate treatment effect tables.
+    3. Publication Counts Figure
         ```sh
-        Rscript ./code/cropburn/03_tabulate_results.R
+       Rscript ./code/publications/00_run_all.R
         ```
-
-    4. Generate figures.
-        ```sh
-        Rscript ./code/cropburn/04_plot_assignment_maps.R
-        ```
-
-
-### Publication Counts
-
-You can replicate the results using one of the following methods:
-
-1. **Full Replication:** Run the following to execute all steps in sequence:
-    ```
-    Rscript ./code/publications/run_all.R
-    ```
-
-2. **Partial Replication:** Run individual scripts for specific steps. 
-
-    1. Data cleaning.
-        ```sh
-        Rscript ./code/publications/01_clean_data.R
-        ```
-
-    2. Generate figures.
-        ```sh
-        Rscript ./code/publications/02_plot_publication_counts.R
-        ```
-
 
 ## Data Usage Disclaimer
 

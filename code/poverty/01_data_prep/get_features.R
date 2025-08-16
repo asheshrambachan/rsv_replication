@@ -131,7 +131,6 @@ for (i in seq_len(num_chunks)) {
   ", where_clause))
   
   features <- query$to_tibble()
-  # colnames(features) <- c(colnames(features)[1:2], paste0("feature_", 1:4000))
   colnames(features)[grep("X_", colnames(features))] <- paste0("feature_", 1:4000)
   features <- left_join(chunk, features, by = c("lat", "lon"))
   
