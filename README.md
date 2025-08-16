@@ -41,7 +41,7 @@ Note: Due to licensing restrictions (CC BY-NC-SA 4.0), the raw and processed dat
 2. Navigate to the tab labeled **Open Polygons and Spatial Statistics**.
 3. Download the following `SHP` files and place the unzipped folders in `./data/poverty/raw` for:
 	- PC11 State Polygons
-    - PC11 District Polygons
+  - PC11 District Polygons
 	- PC11 Village Polygons
 	- Shrid Polygons
 4. Download the following `SHP` files and place the unzipped folders in `./data/poverty/raw` for:
