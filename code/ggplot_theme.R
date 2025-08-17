@@ -35,7 +35,7 @@ density_base_plot <- function(data, x, fill, guide) {
       x = "First principal component of *R*",
       y = "Density"
     ) +
-    scale_x_continuous(minor_breaks = seq(0, 1, by = 0.05), limits = c(-8.7, 1.8)) +
+    scale_x_continuous(minor_breaks = seq(0, 1, by = 0.05), limits = c(-9, 2)) +
     scale_y_continuous(minor_breaks = seq(0, 1, by = 0.05), limits = c(0, 0.8)) +
     scale_color_manual(name = NULL, breaks = guide$breaks, labels = guide$labels, values = guide$colors) +
     scale_fill_manual(name = NULL, breaks = guide$breaks, labels = guide$labels, values = guide$colors) +

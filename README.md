@@ -27,7 +27,7 @@ Create a Conda environment with the required dependencies for Python and R:
 cd path/to/rsv_replication
 conda update conda
 conda config --set channel_priority strict
-conda env create -f conda_env.yaml
+conda env create -f environment.yaml
 conda activate rsv
 ```
 
@@ -78,10 +78,3 @@ You can replicate the results using one of the following methods:
 ## Data Usage Disclaimer
 
 This repository contains proprietary data that is intended for internal use only. Redistribution or external sharing of this data is strictly prohibited.
-
-## TODO
-- [ ] `conda env export > conda_env.yml`
-- [ ] Add `boot.pval` to conda env
-- [ ] Add a codebook to data in kelseyjack_et_al using the [google doc file](Crop Burning Application Notes)
-- [ ] Change google doc to private
-- [ ] repeat the analysis using the new data from shrug

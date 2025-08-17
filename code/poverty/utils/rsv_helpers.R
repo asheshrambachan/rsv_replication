@@ -68,7 +68,6 @@ rsv_fit_train <- function(X, D, Y, Se, So, X_test, classwt = c(10,1), ntree = 10
   # Step 2b
   model_Y_So <- randomForest(x = X[So, , drop = FALSE], y = factor(Y[So], levels = c(0, 1)), classwt = classwt, ntree = ntree)
   model_D_Se <- randomForest(x = X[Se, , drop = FALSE], y = factor(D[Se], levels = c(0, 1)), ntree = ntree)
-  if (length(unique(Se)) > 1) model_Se <- randomForest(x = X, y = factor(Se, levels = c(FALSE, TRUE)), ntree = ntree)
   model_So <- randomForest(x = X, y = factor(So, levels = c(FALSE, TRUE)), ntree = ntree)
   
   train_pred <- data.frame(
@@ -80,7 +79,7 @@ rsv_fit_train <- function(X, D, Y, Se, So, X_test, classwt = c(10,1), ntree = 10
   test_pred <- data.frame(
     D_Se = predict(model_D_Se, X_test, type = "prob")[, 2], 
     Y_So = predict(model_Y_So, X_test, type = "prob")[, 2],
-    Se   = if (exists("model_Se")) predict(model_Se,   X_test, type = "prob")[, 2] else rep(unique(Se), nrow(X_test)), 
+    Se   = rep(TRUE, nrow(X_test)),
     So   = predict(model_So,   X_test, type = "prob")[, 2]
   )
   

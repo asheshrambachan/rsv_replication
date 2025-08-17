@@ -7,14 +7,17 @@
 
 rm(list = ls())
 
+devtools::install_github("redivis/redivis-r", ref="main")
+
 ## Load libraries
 suppressPackageStartupMessages({
   library(dplyr)
   library(readr)
   library(sf)
   library(geosphere)
-  library(redivis) # devtools::install_github("redivis/redivis-r", ref="main")
+  library(redivis)
 })
+
 options(readr.show_col_types = FALSE)
 sf_use_s2(FALSE)
 

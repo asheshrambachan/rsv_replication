@@ -1,4 +1,6 @@
 # Load required packages
+install.packages("boot.pval")
+
 suppressPackageStartupMessages({
   library(boot)
   library(boot.pval)
