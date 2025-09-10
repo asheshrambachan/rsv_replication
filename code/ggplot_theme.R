@@ -148,6 +148,7 @@ bias_rmse_theme <- function(guide){
       axis.title = element_text(size=14, family=font, color="black"),
       panel.grid.major = element_line(linewidth=0.3),
       panel.grid.minor = element_line(linewidth=0.1),
+      # panel.grid.major.x = element_blank(),
       panel.grid.minor.x = element_blank(),
     )
   )

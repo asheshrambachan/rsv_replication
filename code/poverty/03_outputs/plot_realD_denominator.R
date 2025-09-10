@@ -50,7 +50,7 @@ for (Y_var in c("Ycons", "Ylowinc", "Ymidinc")){
       values = guide$shape
     ) +
     scale_x_discrete(labels = ~ str_wrap(as.character(.x), 5, whitespace_only=F)) +
-    scale_y_continuous(limits = ylim, minor_breaks = seq(-2,10,0.1)) + 
+    scale_y_continuous(limits = ylim, minor_breaks = seq(-2,10,0.25)) + 
     theme_bw() +
     theme(
       legend.position="none",
