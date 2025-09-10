@@ -1,4 +1,4 @@
-# Program evaluation with remotely sensed outcomes: Replication package
+# Program Evaluation with Remotely Sensed Outcomes: Replication Package
 
 ## Repository Structure
 
@@ -78,3 +78,6 @@ You can replicate the results using one of the following methods:
 ## Data Usage Disclaimer
 
 This repository contains proprietary data that is intended for internal use only. Redistribution or external sharing of this data is strictly prohibited.
+
+## Reference
+Rambachan, A., Singh, R., and Viviano, D. (2025). "Program Evaluation with Remotely Sensed Outcomes." [arXiv preprint:2411.10959](https://arxiv.org/abs/2411.10959) 
