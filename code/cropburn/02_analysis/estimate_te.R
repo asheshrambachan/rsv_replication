@@ -4,11 +4,13 @@ rm(list=ls())
 # Load required packages
 library(boot)
 library(purrr)
+library(parallel)
 source("code/cropburn/utils/cluster_grouped_sample.R")
 source("code/cropburn/utils/treatment_effects.R")
 
 # Load cleaned dataset
-data <- read.csv("data/processed/cropburn/data.csv")
+data <- read.csv("data/cropburn/processed/cropburn_data.csv")
+B <- 200
 cores <- min(B, 200, detectCores() - 1)
 
 for (R_var in c("R_max", "R_bal")){
@@ -36,7 +38,7 @@ for (R_var in c("R_max", "R_bal")){
   print(out)
   
   # Save Output
-  output_path <- sprintf("data/processed/cropburn/te_bootstrap_%s.rds", gsub("_", "", R_var))
+  output_path <- sprintf("data/cropburn/processed/te_bootstrap_%s.rds", gsub("_", "", R_var))
   saveRDS(out, file = output_path)
   cat(sprintf("Saved bootstrap simulations to: %s\n", output_path))
 }

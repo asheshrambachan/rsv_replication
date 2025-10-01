@@ -10,13 +10,13 @@ suppressPackageStartupMessages({
 
 # Load Jack et al to SHRUG Village Mapping
 shrug_jacketal_mapping <- read_csv(
-  "data/raw/jacketal_shrug_mapping.csv", 
+  "data/cropburn/raw/jacketal_shrug_mapping.csv", 
   col_types = cols(pc11_tv_id = "c"),
   col_select = c("pc11_tv_id", "village_id")
   )
 
 # Read and Clean Jack et al Plot-Level Data
-data <- read_dta("data/raw/jacketal_replication_package/Data/Analysis/dataset_for_analysis_plot_level.dta") %>%
+data <- read_dta("data/cropburn/raw/jacketal_replication_package/Data/Analysis/dataset_for_analysis_plot_level.dta") %>%
   
   # Remove incomplete or alternate IDs
   select(-village_id, -blp_plot_id, -sc_plot_id) %>%
@@ -77,6 +77,6 @@ data <- right_join(shrug_jacketal_mapping, data, by = "village_id") %>%
   select(-unique_plot_id)
 
 # Save cleaned dataset
-output_path <- "data/processed/cropburn/data.csv"
+output_path <- "data/cropburn/processed/cropburn_data.csv"
 write.csv(data, output_path, row.names = FALSE)
 cat(sprintf("Saved cleaned data to: %s\n", output_path))

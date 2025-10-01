@@ -46,7 +46,7 @@ tab <- data %>%
     `Number of villages`        = n_distinct(shrid2),
     `Average population`        = round(mean(tot_p), 0),
     `Average fraction female`   = round(mean(tot_f), 3),
-    `Average fraction urban`    = round(mean(urban), 3),
+    # `Average fraction urban`    = round(mean(urban), 3),
     .groups = "drop"
   ) %>%
   t() %>%
@@ -60,30 +60,30 @@ latex_tab <- kable(
     tab, 
     format    = "latex",
     booktabs  = TRUE,
-    align     = "l|cccc",
+    align     = "lcccc",
     escape    = FALSE,
-    linesep   = "",
-    label     = "summaries",
-    caption = "Village summary statistics."
-  ) %>%
-  kable_styling(latex_options = c("hold_position")) %>%
-  row_spec(2, hline_after = TRUE, extra_latex_after = "%") # Horizontal line after header
-
+    linesep   = ""
+  ) 
 
 ## Patch table environment for custom placement and alignment
 latex_tab <- sub(
   pattern = paste0(
-    "\\\\begin\\{table\\}\\[!h\\][\n\r]+",
-    "\\\\centering[\n\r]+",
-    "\\\\caption\\{\\\\label\\{tab:summaries\\}Village summary statistics.\\}[\n\r]+",
-    "\\\\centering[\n\r]+",
-    "\\\\begin\\{tabular\\}\\[t\\]\\{[^}]+\\}"
+    "\\\\begin\\{tabular\\}\\{lcccc\\}\n",
+    "\\\\toprule\n",
+    "Sample & Observational & Experimental: Untreated & Experimental: Untreated & Experimental: Treated\\\\\\\\\n",
+    "Smartcards & N/A & 2012 & 2011 & 2010\\\\\\\\"
   ),
-  replacement = "\\\\begin{table}[htbp!]\n\\\\centering\n\\\\begin{tabular}{l|cccc}",
+  replacement = paste0(
+    "\\\\begin{tabular}{l|cccc}\n",
+    "\\\\toprule\n",
+    "Sample & Observational & Experimental: Untreated & Experimental: Untreated & Experimental: Treated\\\\\\\\\n",
+    "Smartcards & N/A & 2012 & 2011 & 2010\\\\\\\\\n",
+    "\\\\midrule"
+  ),
   latex_tab
-  ) 
+  )
 
-
+print(latex_tab)
 ## Save table
 output_path <- "outputs/poverty/poverty_summary_stats.tex"
 save_kable(latex_tab, output_path)
