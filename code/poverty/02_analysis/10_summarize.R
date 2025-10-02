@@ -19,49 +19,55 @@ alpha <- 0.05
 # -----------------------------------------------------------------------------
 results <- list()
 
-## 1.1 Benchmark: Estimate and CI for each Y outcome
-for (Y in c("Ycons", "Ylowinc", "Ymidinc")){
-  model <- readRDS(sprintf("data/poverty/interim/benchmark_realD_%s.rds", Y))
-  
-  coef <- unname(coef(model)[2])
-  se <- unname(model$se[2])
-  lci <- coef - qnorm(1 - alpha) * se
-  uci <- coef + qnorm(1 - alpha) * se
-  
-  # Append row to results list
-  results[[length(results) + 1]] <- data.frame(
-    estimator = "benchmark",
-    S = NA,
-    Y = Y,
-    coef = coef,
-    se = se,
-    lci = lci,
-    uci = uci
-  )
-}
 
-## 1.2 RSV: Estimate and denominator for each (Y, S) combination
-for (Y in c("Ycons", "Ylowinc", "Ymidinc")){
-  for (S in c("realS", "synthS")){
-    model <- readRDS(sprintf("data/poverty/interim/rsv_realD_%s_%s.rds", S, Y))
+for (spillover in c("", "_wo_spillover")){
+  for (Y in c("Ycons", "Ylowinc", "Ymidinc")){
     
-    coef <- model$coef
-    se <- model$se
+    ## 1.1 Benchmark: Estimate and CI for each Y outcome
+    model <- readRDS(sprintf("data/poverty/interim/benchmark_realD_%s%s.rds", Y, spillover))
+    
+    coef <- unname(coef(model)[2])
+    se <- unname(model$se[2])
     lci <- coef - qnorm(1 - alpha) * se
     uci <- coef + qnorm(1 - alpha) * se
     
     # Append row to results list
     results[[length(results) + 1]] <- data.frame(
-      estimator = "rsv",
-      S = S,
+      estimator = "benchmark",
+      spillover = if_else(spillover=="_wo_spillover", "without", "with"),
+      S = NA,
       Y = Y,
       coef = coef,
       se = se,
       lci = lci,
       uci = uci
     )
+    
+    
+    ## 1.2 RSV: Estimate and denominator for each (Y, S) combination
+    for (S in c("realS", "synthS")){
+      model <- readRDS(sprintf("data/poverty/interim/rsv_realD_%s_%s%s.rds", S, Y, spillover))
+      
+      coef <- model$coef
+      se <- model$se
+      lci <- coef - qnorm(1 - alpha) * se
+      uci <- coef + qnorm(1 - alpha) * se
+      
+      # Append row to results list
+      results[[length(results) + 1]] <- data.frame(
+        estimator = "rsv",
+        spillover = if_else(spillover=="_wo_spillover", "without", "with"),
+        S = S,
+        Y = Y,
+        coef = coef,
+        se = se,
+        lci = lci,
+        uci = uci
+      )
+    }
   }
 }
+
 
 
 ## Aggregate Results
@@ -79,25 +85,28 @@ cat(sprintf("Saved to: %s\n", output_path))
 # 2. Export Relavance/Denominators for RSV RealD
 # -----------------------------------------------------------------------------
 results <- list()
-for (Y in c("Ycons", "Ylowinc", "Ymidinc")){
-  for (S in c("realS", "synthS")){
-    model <- readRDS(sprintf("data/poverty/interim/rsv_realD_%s_%s.rds", S, Y))
-    
-    coef <- model$denominator
-    se <- model$denominator_se
-    lci <- coef - qnorm(1 - alpha) * se
-    uci <- coef + qnorm(1 - alpha) * se
-    
-    # Append row to results list
-    results[[length(results) + 1]] <- data.frame(
-      estimator = "rsv",
-      S = S,
-      Y = Y,
-      coef = coef,
-      se = se,
-      lci = lci,
-      uci = uci
-    )
+for (spillover in c("", "_wo_spillover")){
+  for (Y in c("Ycons", "Ylowinc", "Ymidinc")){
+    for (S in c("realS", "synthS")){
+      model <- readRDS(sprintf("data/poverty/interim/rsv_realD_%s_%s%s.rds", S, Y, spillover))
+      
+      coef <- model$denominator
+      se <- model$denominator_se
+      lci <- coef - qnorm(1 - alpha) * se
+      uci <- coef + qnorm(1 - alpha) * se
+      
+      # Append row to results list
+      results[[length(results) + 1]] <- data.frame(
+        estimator = "rsv",
+        spillover = if_else(spillover=="_wo_spillover", "without", "with"),
+        S = S,
+        Y = Y,
+        coef = coef,
+        se = se,
+        lci = lci,
+        uci = uci
+      )
+    }
   }
 }
 
@@ -138,6 +147,7 @@ print(head(summary_df))
 output_path <-  "data/poverty/processed/realD_representations.csv"
 write.csv(summary_df,output_path, row.names = F)
 cat(sprintf("Saved to: %s\n", output_path))
+
 
 
 # -----------------------------------------------------------------------------

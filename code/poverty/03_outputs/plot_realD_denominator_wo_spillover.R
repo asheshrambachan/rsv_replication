@@ -22,7 +22,7 @@ guide <- data.frame(
 
 
 data <- read.csv("data/poverty/processed/realD_denominators.csv") %>%
-  filter(spillover == "with") %>%
+  filter(spillover == "without") %>%
   mutate(
     estimator_S = ifelse(is.na(S), estimator, paste0(estimator, "_", S)),
     estimator_S = factor(estimator_S, levels=guide$breaks, labels=guide$labels)
@@ -51,7 +51,7 @@ for (Y_var in c("Ycons", "Ylowinc", "Ymidinc")){
       values = guide$shape
     ) +
     scale_x_discrete(labels = ~ str_wrap(as.character(.x), 5, whitespace_only=F)) +
-    scale_y_continuous(limits = ylim, minor_breaks = seq(-2,10,0.25)) + 
+    scale_y_continuous(limits = ylim, minor_breaks = seq(-2,10,0.1)) + 
     theme_bw() +
     theme(
       legend.position="none",
@@ -65,7 +65,7 @@ for (Y_var in c("Ycons", "Ylowinc", "Ymidinc")){
       axis.text = element_text(size=12, family=font, color="black"),
     )
   
-  output_path <- file.path(output_dir, sprintf("poverty_realD_den_%s.jpeg", Y_var))
+  output_path <- file.path(output_dir, sprintf("poverty_realD_den_%s_wo_spillover.jpeg", Y_var))
   ggsave(output_path, plot = fig, height = 3, width = 3)
   cat(sprintf("Saved figure to: %s\n", output_path))
 }

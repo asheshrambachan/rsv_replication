@@ -29,3 +29,4 @@ dependencies:
   - r-binsreg=1.1
   - r-ggpubr=0.6.0
   - r-modelsummary=0.7.0
+  - r-igraph=2.1.4

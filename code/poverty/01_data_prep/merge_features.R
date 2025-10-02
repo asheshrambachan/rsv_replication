@@ -8,9 +8,12 @@ rm(list = ls())
 
 ## Load libraries
 suppressPackageStartupMessages({
+  library(haven)
   library(dplyr)
+  library(tidyr)
   library(readr)
 })
+source("code/poverty/utils/spillover_affected_bkm.R")
 options(readr.show_col_types = F)
 
 # -----------------------------------------------------------------------------
@@ -59,6 +62,41 @@ data <- read_csv("data/poverty/processed/base_data.csv") %>%
   inner_join(features, by = "shrid2") %>%
   filter(distance_km <= 1)
 
+data <- data %>%
+  mutate(spillover_20km = spillover_affected_bkm(D, centroid_lat, centroid_lon, b_km = 20))
+
+# -----------------------------------------------------------------------------
+# 5. Add Spatial Coordinates and Spillover Indicator
+# -----------------------------------------------------------------------------
+
+## 5.1 Load shapefile and compute centroids for our villages
+shrids <- st_read("data/poverty/processed/shapefiles/shrids.gpkg", quiet = TRUE) %>%
+  filter(shrid2 %in% data$shrid2)
+
+centroids <- st_centroid(shrids)
+coords <- st_coordinates(centroids)
+
+centroid_coords <- shrids %>%
+  mutate(
+    centroid_lon = coords[, 1], 
+    centroid_lat = coords[, 2]
+  ) %>%
+  as.data.frame() %>%
+  select(shrid2, centroid_lat, centroid_lon)
+
+## 5.2 Add coordinates to data
+data <- data %>%
+  left_join(centroid_coords, by = "shrid2")
+
+## 5.3 Create spillover indicator using polygon-based approach (more accurate than centroids)
+source("code/poverty/utils/spillover_polygon_based.R")
+
+# Use hybrid approach: centroids for initial filtering, then accurate polygon distances
+spillover_20km <- compute_spillover_hybrid(shrids, data$D, buffer_km = 20)
+
+# Add spillover indicator to data
+data <- data %>%
+  mutate(spillover_20km = spillover_20km) 
 
 # -----------------------------------------------------------------------------
 # 4. Export Final Merged Dataset

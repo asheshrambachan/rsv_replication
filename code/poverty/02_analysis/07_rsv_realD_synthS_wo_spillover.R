@@ -15,7 +15,6 @@ suppressPackageStartupMessages({
 options(readr.show_col_types = F)
 source("code/poverty/utils/rsv_fun.R")
 
-
 ## Parse Command-Line Arguments
 parser <- ArgumentParser(description = "Estimate RSV: Real Treatment Effects & Synthetic Sample Definitions")
 parser$add_argument("-c", "--cores", type = "integer", default = 245)
@@ -45,26 +44,27 @@ obs_mandals <- unique(data$clusters)[1:floor(length(unique(data$clusters)) / 2)]
 # we always assume R/X is not missing and is observed
 # We also assume that Y is not missing and is observed
 data <- data %>%
+  filter(spillover_20km == FALSE) %>%
   mutate(
     Se = !is.na(D), # wave %in% c("Treatment", "Control", "Buffer")
     So = clusters %in% obs_mandals, # Synthetic
     Ycons = if_else(So == TRUE, Ycons, NA), # Outcome Y is observed only for S = o
     Ylowinc = if_else(So == TRUE, Ylowinc, NA),
-    Ymidinc = if_else(So == TRUE, Ymidinc, NA),
+    Ymidinc = if_else(So == TRUE, Ymidinc, NA)
   ) 
 
 ## RSV Estimation Function (per outcome)
 run_one <- function(Y_var) {
   d <- data %>%
-    mutate(Y = !!sym(Y_var)) 
-  
+    mutate(Y = !!sym(Y_var))
+
   # Features
-  X <- d %>% 
+  X <- d %>%
     select(
       starts_with("viirs_annual_"),
       starts_with("feature_")
     )
-  
+
   # Fit RSV
   set.seed(42)
   out <- rsv_fun(
@@ -73,20 +73,18 @@ run_one <- function(Y_var) {
     classwt = c(10, 1), ntree = 100, eps = 1e-2,
     se.boot = TRUE, clusters_test = d$clusters, B = B, cores = cores_2
   )
-  
+
   # Export Results
-  output_path <- sprintf("data/poverty/interim/rsv_realD_synthS_%s.rds", Y_var)
+  output_path <- sprintf("data/poverty/interim/rsv_realD_synthS_%s_wo_spillover.rds", Y_var)
   dir.create(dirname(output_path), recursive = T, showWarnings = F)
   saveRDS(out, output_path)
-  
-  # Return Summary
-  sprintf("[RSV] realD realS %s; coef = %.3f (%.3f); denominator = %.3f (%.3f) → saved to %s\n", Y_var, out$coef, out$se, out$denominator, out$denominator_se, output_path)
-}
 
+  # Return Summary
+  sprintf("[RSV]  wo spillover realD realS %s; coef = %.3f (%.3f); denominator = %.3f (%.3f) → saved to %s\n", Y_var, out$coef, out$se, out$denominator, out$denominator_se, output_path)
+}
 
 ## Parallel Estimation Across Outcomes
 results <- mclapply(Y_vars, run_one, mc.cores = cores_1)
-
 
 ## Print Summary
 for (i in seq_along(results))

@@ -37,20 +37,22 @@ cat(sprintf("[INFO] Parallelizing %d outcomes × %d cores/boot\n", cores_1, core
 
 
 ## Load data and define samples
+# we always assume R/X is not missing and is observed
+# We also assume that Y is not missing and is observed
 data <- read_csv("data/poverty/processed/poverty_data.csv") %>%
   mutate(
     Se = !is.na(D), # wave %in% c("Treatment", "Control", "Buffer") # Se = all experimental villages (treated and untreated)
-    So = wave %in% c("Holdout", "Buffer") # So = Observational villages + "buffer" untreated experimental villages 
+    So = wave %in% c("Holdout", "Buffer"), # So = Observational villages + "buffer" untreated experimental villages 
+    Ycons = if_else(So == TRUE, Ycons, NA), # Outcome Y is observed only for S = o
+    Ylowinc = if_else(So == TRUE, Ylowinc, NA),
+    Ymidinc = if_else(So == TRUE, Ymidinc, NA),
   )
 
 
 ## RSV Estimation Function (per outcome)
 run_one <- function(Y_var) {
-  # Outcome Y is observed only for S = o
   d <- data %>%
-    mutate(Y = !!sym(Y_var)) %>%
-    filter(!is.na(Y)) %>%
-    mutate(Y = if_else(So == TRUE, Y, NA))
+    mutate(Y = !!sym(Y_var)) 
 
   # Features
   X <- d %>%
