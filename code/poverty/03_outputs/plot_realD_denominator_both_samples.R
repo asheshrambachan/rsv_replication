@@ -9,37 +9,35 @@ suppressPackageStartupMessages({
 })
 source("code/ggplot_theme.r")  
 
-
 # Output directory 
-output_dir <- "outputs/poverty/realD"
+output_dir <- "outputs/poverty/realD_GATE"
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
-
 guide <- data.frame(
-  breaks = c("benchmark_with", "rsv_synthS_with", "rsv_realS_with", "benchmark_without", "rsv_synthS_without", "rsv_realS_without"),
-  labels = c("Bench-mark: w/ spill.", "RSV: synth. w/ spill.", "RSV: real w/ spill.", "Bench-mark: w/o spill.", "RSV: synth. w/o spill.", "RSV: real w/o spill."),
+  breaks = c("benchmark_full", "rsv_synthS_full", "rsv_realS_full", "benchmark_GATE", "rsv_synthS_GATE", "rsv_realS_GATE"),
+  labels = c("Bench-mark: full sample", "RSV: synth. full sample", "RSV: real full sample", "Bench-mark: GATE sample", "RSV: synth. GATE sample", "RSV: real GATE sample"),
   colors = c("black", palette$blue, palette$darkblue, "gray", palette$green, palette$darkgreen),
   linetype = c( "solid", "solid", "solid", "solid", "solid", "solid"),
   shapes = c(17, 15, 19, 17, 15, 19)
 )
 
-data <- read.csv("data/poverty/processed/realD_coefs.csv") %>%
+data <- read.csv("data/poverty/processed/realD_denominators.csv") %>%
   mutate(
-    estimator_S = ifelse(is.na(S), paste0(estimator, "_", spillover), paste0(estimator, "_", S, "_", spillover)),
+    estimator_S = ifelse(is.na(S), paste0(estimator, "_", sample), paste0(estimator, "_", S, "_", sample)),
     estimator_S = factor(estimator_S, levels = guide$breaks, labels = guide$labels)
   )
 
-ylim <- c(min(data$lci), max(data$uci))
+ylim <- c(0, max(data$uci))
 
 for (Y_var in c("Ycons", "Ylowinc", "Ymidinc")){
   fig <- data %>%
     filter(Y==Y_var) %>%
     ggplot(aes(x=estimator_S, y=coef, shape=estimator_S, color=estimator_S, linetype=estimator_S)) +
-    geom_errorbar(aes(ymin=lci, ymax=uci), linewidth=0.65, width = 0.3) +
+    geom_errorbar(aes(ymin=lci, ymax=uci), linewidth=0.65, width = 0.24) +
     geom_point(size = 2) +
+    geom_hline(aes(yintercept = 0), linewidth=0.5, color="black", linetype="dashed") +
     labs(
-      x = "",
-      y = ifelse(Y_var=="Ycons", TeX("Treatment effect $\\theta$"), ""),
+      y = ifelse(Y_var=="Ycons","Denominator (Relevance)", ""),
       shape=NULL,
       color=NULL
     ) +
@@ -56,7 +54,7 @@ for (Y_var in c("Ycons", "Ylowinc", "Ymidinc")){
       values = guide$linetype
     ) +
     scale_x_discrete(labels = ~ str_wrap(as.character(.x), 5, whitespace_only=F)) +
-    scale_y_continuous(limits=ylim, breaks = seq(-2,2,0.05 ), minor_breaks = seq(-2,2,0.01)) +
+    scale_y_continuous(limits = ylim, minor_breaks = seq(-2,10,0.4)) + 
     theme_bw() +
     theme(
       legend.position="none",
@@ -70,8 +68,7 @@ for (Y_var in c("Ycons", "Ylowinc", "Ymidinc")){
       axis.text = element_text(size=9, family=font, color="black"), #, angle = 45, hjust = 1, vjust = 1),
     )
   
-  output_path <- file.path(output_dir, sprintf("poverty_realD_te_%s_by_spillover.jpeg", Y_var))
+  output_path <- file.path(output_dir, sprintf("poverty_realD_den_%s_both_samples.jpeg", Y_var))
   ggsave(output_path, plot = fig, height = 3, width = 3)
   cat(sprintf("Saved figure to: %s\n", output_path))
-  
 }

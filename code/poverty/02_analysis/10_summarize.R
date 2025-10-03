@@ -20,7 +20,9 @@ alpha <- 0.05
 results <- list()
 
 
-for (spillover in c("", "_wo_spillover")){
+for (spillover in c("", "_gate_sample")){
+  sample = if_else(spillover=="_gate_sample", "GATE", "full")
+  
   for (Y in c("Ycons", "Ylowinc", "Ymidinc")){
     
     ## 1.1 Benchmark: Estimate and CI for each Y outcome
@@ -34,7 +36,7 @@ for (spillover in c("", "_wo_spillover")){
     # Append row to results list
     results[[length(results) + 1]] <- data.frame(
       estimator = "benchmark",
-      spillover = if_else(spillover=="_wo_spillover", "without", "with"),
+      sample = sample,
       S = NA,
       Y = Y,
       coef = coef,
@@ -56,7 +58,7 @@ for (spillover in c("", "_wo_spillover")){
       # Append row to results list
       results[[length(results) + 1]] <- data.frame(
         estimator = "rsv",
-        spillover = if_else(spillover=="_wo_spillover", "without", "with"),
+        sample = sample,
         S = S,
         Y = Y,
         coef = coef,
@@ -85,7 +87,9 @@ cat(sprintf("Saved to: %s\n", output_path))
 # 2. Export Relavance/Denominators for RSV RealD
 # -----------------------------------------------------------------------------
 results <- list()
-for (spillover in c("", "_wo_spillover")){
+for (spillover in c("", "_gate_sample")){
+  sample = if_else(spillover=="_gate_sample", "GATE", "full")
+  
   for (Y in c("Ycons", "Ylowinc", "Ymidinc")){
     for (S in c("realS", "synthS")){
       model <- readRDS(sprintf("data/poverty/interim/rsv_realD_%s_%s%s.rds", S, Y, spillover))
@@ -98,7 +102,7 @@ for (spillover in c("", "_wo_spillover")){
       # Append row to results list
       results[[length(results) + 1]] <- data.frame(
         estimator = "rsv",
-        spillover = if_else(spillover=="_wo_spillover", "without", "with"),
+        sample = sample,
         S = S,
         Y = Y,
         coef = coef,

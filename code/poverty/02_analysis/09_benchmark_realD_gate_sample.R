@@ -29,9 +29,9 @@ for (Y_var in Y_vars){
   )
   
   # Export Results
-  output_path <- sprintf("data/poverty/interim/benchmark_realD_%s_wo_spillover.rds", Y_var)
+  output_path <- sprintf("data/poverty/interim/benchmark_realD_%s_gate_sample.rds", Y_var)
   dir.create(dirname(output_path), recursive = T, showWarnings = F)
   saveRDS(model, output_path)
-  cat(sprintf("[BENCHMARK] wo spillover realD %s; coef = %.3f (%.3f) → saved to %s\n", 
+  cat(sprintf("[BENCHMARK] GATE realD %s; coef = %.3f (%.3f) → saved to %s\n", 
               Y_var, coef(model)[2], model$se[2], output_path))
 }

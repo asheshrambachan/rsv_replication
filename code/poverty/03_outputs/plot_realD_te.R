@@ -23,7 +23,7 @@ guide <- data.frame(
 )
 
 data <- read.csv("data/poverty/processed/realD_coefs.csv") %>%
-  filter(spillover=="with") %>%
+  filter(sample=="full") %>%
   mutate(
     estimator_S = ifelse(is.na(S), estimator, paste0(estimator, "_", S)),
     estimator_S = factor(estimator_S, levels = guide$breaks, labels = guide$labels)
