@@ -48,3 +48,6 @@ data/cropburn/raw/jacketal_replication_package/Data/Monitoring/*
 data/cropburn/raw/jacketal_replication_package/Data/Spotchecks/*
 data/cropburn/processed/shapefiles
 
+data/raw/
+data/interim/
+data/
