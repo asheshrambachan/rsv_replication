@@ -6,7 +6,7 @@
 # membership indicators S_e and S_o are derived from the data: S_e flags plots
 # with observed treatment D, S_o flags plots with observed outcome Y.
 #
-# Input:  data/clean/cropburn/obs_data.csv
+# Input:  data/clean/cropburn/data_obs.csv
 # Output: data/interim/cropburn/fit_rsv_obs.Rds
 # =============================================================================
 
@@ -22,7 +22,7 @@ for (f in list.files("R", pattern = "\\.R$", full.names = TRUE)) source(f)
 # 1. Load data and extract model inputs
 # -----------------------------------------------------------------------------
 
-df <- read_csv("data/clean/cropburn/obs_data.csv", show_col_types = FALSE)
+df <- read_csv("data/clean/cropburn/data_obs.csv", show_col_types = FALSE)
 
 Y        <- df$Y
 D        <- df$D

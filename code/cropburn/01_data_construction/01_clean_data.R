@@ -10,7 +10,7 @@
 #     dataset_for_analysis_plot_level.dta
 #
 # Output:
-#   data/clean/cropburn/cropburn_data.csv
+#   data/clean/cropburn/data.csv
 # =============================================================================
 
 rm(list = ls())
@@ -106,8 +106,8 @@ plots <- plots %>%
     Y_mon = as.numeric(!monp_p_burnt_any),
     Y     = as.numeric(!rs_label),
 
-    # Reconstructed outcome: not burned only if both sources agree
-    Y_recon = as.numeric(pmin(Y_sc, Y_mon, na.rm = TRUE))
+    # # Reconstructed outcome: not burned only if both sources agree
+    # Y_recon = as.numeric(pmin(Y_sc, Y_mon, na.rm = TRUE))
   )
 
 
@@ -177,7 +177,7 @@ plots <- right_join(shrug_mapping, plots, by = "village_id") %>%
 # 8. Save cleaned plot-level dataset
 # -----------------------------------------------------------------------------
 
-output_path <- "data/clean/cropburn/cropburn_data.csv"
+output_path <- "data/clean/cropburn/data.csv"
 dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
 write_csv(plots, output_path)
 cat(sprintf("Saved cleaned plot data to: %s\n", output_path))

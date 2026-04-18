@@ -6,7 +6,7 @@
 # both D and Y observed (S = "e,o"), enabling direct comparison between the
 # RSV estimate and the ground-truth ATE.
 #
-# Input:  data/clean/cropburn/val_data.csv
+# Input:  data/clean/cropburn/data_val.csv
 # Output: data/interim/cropburn/fit_rsv_val.Rds
 # =============================================================================
 
@@ -22,7 +22,7 @@ for (f in list.files("R", pattern = "\\.R$", full.names = TRUE)) source(f)
 # 1. Load data and extract model inputs
 # -----------------------------------------------------------------------------
 
-df <- read_csv("data/clean/cropburn/val_data.csv", show_col_types = FALSE)
+df <- read_csv("data/clean/cropburn/data_val.csv", show_col_types = FALSE)
 
 Y        <- df$Y
 D        <- df$D

@@ -17,11 +17,11 @@
 # remote sensing predictors (R_max, R_bal, R_prob) non-missing.
 #
 # Input:
-#   data/clean/cropburn/cropburn_data.csv
+#   data/clean/cropburn/data.csv
 #
 # Outputs:
-#   data/clean/cropburn/obs_data.csv
-#   data/clean/cropburn/val_data.csv
+#   data/clean/cropburn/data_obs.csv
+#   data/clean/cropburn/data_val.csv
 # =============================================================================
 
 rm(list = ls())
@@ -37,7 +37,7 @@ suppressPackageStartupMessages({
 # -----------------------------------------------------------------------------
 
 plots <- read_csv(
-  "data/clean/cropburn/cropburn_data.csv",
+  "data/clean/cropburn/data.csv",
   show_col_types = FALSE
 )
 
@@ -67,9 +67,9 @@ obs_data <- plots %>%
   ) %>%
   filter(!is.na(S))
 
-write_csv(obs_data, "data/clean/cropburn/obs_data.csv")
+write_csv(obs_data, "data/clean/cropburn/data_obs.csv")
 
-cat("\nObservational sample — data/clean/cropburn/obs_data.csv\n")
+cat("\nObservational sample — data/clean/cropburn/data_obs.csv\n")
 cat(sprintf("  Total plots: %d\n", nrow(obs_data)))
 obs_data %>%
   count(S) %>%
@@ -100,9 +100,9 @@ val_data <- plots %>%
   ) %>%
   filter(!is.na(S))
 
-write_csv(val_data, "data/clean/cropburn/val_data.csv")
+write_csv(val_data, "data/clean/cropburn/data_val.csv")
 
-cat("\nValidation sample — data/clean/cropburn/val_data.csv\n")
+cat("\nValidation sample — data/clean/cropburn/data_val.csv\n")
 cat(sprintf("  Total plots: %d\n", nrow(val_data)))
 val_data %>%
   count(S) %>%

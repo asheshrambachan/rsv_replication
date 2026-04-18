@@ -91,7 +91,7 @@ sample_R_given_Y <- function(R_given_Y, y_vals, y_levels) {
 # Combined dataset generators
 # -----------------------------------------------------------------------------
 
-# Generate one simulated dataset for binary_noexpoutcomes estimators.
+# Generate one simulated dataset for sims_noexpoutcomes_{outcome} estimators.
 #
 # Experimental sample (n_e obs): D randomised, R observed, Y masked (S_e=1, S_o=0).
 # Observational sample (n_o obs): Y and R observed, D = NA  (S_e=0, S_o=1).
@@ -120,7 +120,7 @@ sim_noexpoutcomes <- function(n_e, n_o, y_levels, p0, p1, alpha_o, R_given_Y) {
 }
 
 
-# Generate one simulated dataset for binary_expoutcomes estimators.
+# Generate one simulated dataset for sims_expoutcomes_Ybin estimators.
 #
 # Returns a named list: Y, D, R, S_e, S_o.
 sim_expoutcomes <- function(n_e, n_o, n_eo, y_levels, p0, p1, alpha_o, R_given_Y) {

@@ -6,7 +6,7 @@
 # practice" benchmark: regress the remote sensing outcome on treatment,
 # ignoring the observational sample entirely.
 #
-# Input:  data/clean/cropburn/obs_data.csv
+# Input:  data/clean/cropburn/data_obs.csv
 # Output: data/interim/cropburn/fit_common_practice_obs.Rds
 # =============================================================================
 
@@ -24,7 +24,7 @@ source("code/utils/common_practice.R")
 # 1. Load data and extract inputs
 # -----------------------------------------------------------------------------
 
-df <- read_csv("data/clean/cropburn/obs_data.csv", show_col_types = FALSE)
+df <- read_csv("data/clean/cropburn/data_obs.csv", show_col_types = FALSE)
 D        <- df$D
 clusters <- df$village_id
 

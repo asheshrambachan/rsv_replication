@@ -6,45 +6,30 @@
 # Relevance measures how informative R is for treatment effect estimation;
 # a higher value indicates a stronger predictor.
 #
-# Inputs:
-#   data/interim/cropburn/fit_rsv_val.Rds
-#   data/interim/cropburn/fit_rsv_obs.Rds
-#
+# Input:  data/clean/cropburn/empirical_relevance.csv  (from 02_empirical/08_summarize_relevance.R)
 # Output: tables/cropburn/tab_relevance.tex
 # =============================================================================
 
-for (f in list.files("R", pattern = "\\.R$", full.names = TRUE)) source(f)
+suppressPackageStartupMessages(library(dplyr))
 
 level <- 0.90
 fmt4  <- function(x) formatC(round(x, 4), format = "f", digits = 4)
 
-# -----------------------------------------------------------------------------
-# 1. Load fits and compute relevance
-# -----------------------------------------------------------------------------
-
-fit_val <- readRDS("data/interim/cropburn/fit_rsv_val.Rds")
-rel_val <- relevance(fit_val, level = level)
-r_val   <- rel_val[rel_val$estimator == "rsv", ]
-
-fit_obs <- readRDS("data/interim/cropburn/fit_rsv_obs.Rds")
-rel_obs <- relevance(fit_obs, level = level)
-r_obs   <- rel_obs[rel_obs$estimator == "rsv", ]
-
-# -----------------------------------------------------------------------------
-# 2. Build LaTeX table
-# -----------------------------------------------------------------------------
+rel <- read.csv("data/clean/cropburn/empirical_relevance.csv")
+val <- rel[rel$sample == "val", ]
+obs <- rel[rel$sample == "obs", ]
 
 tex <- c(
   "\\begin{tabular}{l | cc}",
   "\\toprule",
   " & Validation & Observational \\\\",
   "\\midrule",
-  sprintf("  Relevance & %s & %s \\\\", fmt4(r_val$estimate), fmt4(r_obs$estimate)),
-  sprintf("            & (%s) & (%s) \\\\", fmt4(r_val$se), fmt4(r_obs$se)),
+  sprintf("  Relevance & %s & %s \\\\", fmt4(val$estimate), fmt4(obs$estimate)),
+  sprintf("            & (%s) & (%s) \\\\", fmt4(val$se), fmt4(obs$se)),
   sprintf("  %.0f\\%% CI  & [%s, %s] & [%s, %s] \\\\",
           100 * level,
-          fmt4(r_val$ci_lower), fmt4(r_val$ci_upper),
-          fmt4(r_obs$ci_lower), fmt4(r_obs$ci_upper)),
+          fmt4(val$ci_lower), fmt4(val$ci_upper),
+          fmt4(obs$ci_lower), fmt4(obs$ci_upper)),
   "\\bottomrule",
   "\\end{tabular}"
 )

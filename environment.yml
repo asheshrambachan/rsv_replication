@@ -4,7 +4,7 @@ channels:
   - defaults
 dependencies:
   # Python (forest data construction only)
-  - python=3.11
+  - python
   - numpy
   - pandas
   - geopandas
@@ -17,20 +17,28 @@ dependencies:
 
   # R
   - r-base
+  - r-argparse
+  - r-binsreg
   - r-data.table
   - r-dplyr
-  - r-tidyr
-  - r-purrr
-  - r-ggplot2
   - r-fixest
-  - r-sf
-  - r-readr
+  - r-geosphere
+  - r-ggplot2
+  - r-ggpubr
   - r-ggtext
+  - r-haven
+  - r-igraph
   - r-latex2exp
-  - r-scales
-  - r-rcolorbrewer
-  - r-knitr
-  - r-kableextra
+  - r-lmtest
+  - r-nnet
+  - r-purrr
+  - r-pROC
   - r-ranger
-  - r-proc
-  - r-argparse
+  - r-rcolorbrewer
+  - r-readr
+  - r-sandwich
+  - r-scales
+  - r-sf
+  - r-stringr
+  - r-tibble
+  - r-tidyr

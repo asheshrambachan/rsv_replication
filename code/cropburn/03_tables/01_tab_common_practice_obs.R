@@ -6,13 +6,16 @@
 # with bootstrap standard errors. This is the benchmark estimator that
 # regresses R on D using only the experimental subsample.
 #
-# Input:  data/interim/cropburn/fit_common_practice_obs.Rds
+# Input:  data/clean/cropburn/empirical_common_practice.csv  (from 02_empirical/05_summarize_common_practice.R)
 # Output: tables/cropburn/tab_common_practice_obs.tex
 # =============================================================================
 
+suppressPackageStartupMessages(library(dplyr))
+
 fmt3 <- function(x) formatC(round(x, 3), format = "f", digits = 3)
 
-fits <- readRDS("data/interim/cropburn/fit_common_practice_obs.Rds")
+cp  <- read.csv("data/clean/cropburn/empirical_common_practice.csv")
+obs <- cp[cp$sample == "obs", ]
 
 tex <- c(
   "\\begin{threeparttable}",
@@ -23,15 +26,15 @@ tex <- c(
   "\\midrule",
   sprintf(
     "  Estimate & %s & %s & %s \\\\",
-    fmt3(fits[["R_max"]]$coefficients),
-    fmt3(fits[["R_bal"]]$coefficients),
-    fmt3(fits[["R_prob"]]$coefficients)
+    fmt3(obs[obs$R_var == "R_max", "coef"]),
+    fmt3(obs[obs$R_var == "R_bal", "coef"]),
+    fmt3(obs[obs$R_var == "R_prob", "coef"])
   ),
   sprintf(
     "           & (%s) & (%s) & (%s) \\\\",
-    fmt3(fits[["R_max"]]$se),
-    fmt3(fits[["R_bal"]]$se),
-    fmt3(fits[["R_prob"]]$se)
+    fmt3(obs[obs$R_var == "R_max", "se"]),
+    fmt3(obs[obs$R_var == "R_bal", "se"]),
+    fmt3(obs[obs$R_var == "R_prob", "se"])
   ),
   "\\bottomrule",
   "\\end{tabular}",
