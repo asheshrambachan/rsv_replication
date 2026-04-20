@@ -40,7 +40,7 @@ The smartcard and cropburn applications use shapefiles from [SHRUG v2.1](https:/
 
 ### Pre-processed clean data
 
-Pre-processed clean datasets are provided in `data/clean/` and can be used to skip data construction entirely. See the [Clean Data Files](#clean-data-files) table below.
+Pre-processed clean datasets are provided in `data/clean/` and can be used to skip data construction entirely. 
 
 
 ## Replication
