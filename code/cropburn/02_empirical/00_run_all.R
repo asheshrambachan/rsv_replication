@@ -1,0 +1,8 @@
+source("code/cropburn/02_empirical/01_common_practice_obs.R")
+source("code/cropburn/02_empirical/02_rsv_obs.R")
+source("code/cropburn/02_empirical/03_common_practice_val.R")
+source("code/cropburn/02_empirical/04_rsv_val.R")
+source("code/cropburn/02_empirical/05_summarize_common_practice.R")
+source("code/cropburn/02_empirical/06_summarize_results.R")
+source("code/cropburn/02_empirical/07_summarize_rsv_vs_linear.R")
+source("code/cropburn/02_empirical/08_summarize_relevance.R")
