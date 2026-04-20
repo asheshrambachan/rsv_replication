@@ -10,7 +10,7 @@
 # probability predictions produced by 01_data_construction/07_rf_predict.R.
 #
 # Input:  data/clean/ugandaforestcover/data_Ybin.csv
-# Output: figures/ugandaforestcover/stability/
+# Output: figures/ugandaforestcover/stability_Ybin/
 # =============================================================================
 
 rm(list = ls())
@@ -113,8 +113,8 @@ for (So_col in c("S_o_02km", "S_o_05km", "S_o_10km")) {
 
     p <- make_density_plot(plot_dt)
 
-    out_path <- file.path("figures/ugandaforestcover/stability", 
-                          sprintf("stability_%s_%s_y%s.pdf", tolower(outcome), so_slug, y_val))
+    out_path <- file.path("figures/ugandaforestcover/stability_Ybin",
+                          sprintf("%s_y%s.jpeg", so_slug, y_val))
     dir.create(dirname(out_path), recursive = TRUE, showWarnings = FALSE)
     ggsave(out_path, plot = p, height = 4, width = 4.5)
     cat("Saved:", out_path, "\n")

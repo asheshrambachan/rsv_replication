@@ -14,6 +14,10 @@ suppressPackageStartupMessages({
 })
 source("code/utils/fte_theme.R")
 
+# Output directory
+output_dir <- "figures/ugandaforestcover"
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
 # ============================================================
 # Load shapefiles
 # ============================================================
@@ -161,7 +165,7 @@ p_zoom <- ggplot() +
     legend.position.inside = c(0.8,0.15)
   )
 
-out_zoom <- "figures/ugandaforestcover/map.pdf"
+out_zoom <-  file.path(output_dir, "map.jpeg")
 ggsave(out_zoom, plot = p_zoom, height = 5, width = 6)
 cat("Saved:", out_zoom, "\n")
 

@@ -6,7 +6,7 @@
 # and the no-spillover robustness sample.
 #
 # Input:  data/clean/smartcards/empirical_results.csv
-# Output: figures/smartcards/empirical_te/{full,nospillover}/
+# Output: figures/smartcards/empirical_{full,nospillover}/te_*.pdf
 # =============================================================================
 
 rm(list = ls())
@@ -33,7 +33,7 @@ all_results <- fread("data/clean/smartcards/empirical_results.csv")
 
 # Produce figures for both the main sample and the no-spillover robustness check
 for (sample in c("full", "nospillover")) {
-  output_dir <- file.path("figures/smartcards/empirical_te", sample)
+  output_dir <- file.path("figures/smartcards", paste0("empirical_", sample))
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
   res  <- all_results %>% filter(.data$sample == .env$sample)
@@ -80,7 +80,7 @@ for (sample in c("full", "nospillover")) {
         axis.text  = element_text(size = 12, family = font, color = "black")
       )
 
-    output_path <- file.path(output_dir, sprintf("te_%s.pdf", Y_var))
+    output_path <- file.path(output_dir, sprintf("te_%s.jpeg", Y_var))
     ggsave(output_path, plot = fig, height = 3, width = 3)
     cat(sprintf("Saved: %s\n", output_path))
   }

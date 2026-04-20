@@ -38,11 +38,8 @@ guide <- data.frame(
 # ==============================================================================
 n_o_vals <- sort(unique(all_results$n_o))
 
-outcome_snake <- c(Ycons = "y_cons", Ylowinc = "y_lowinc", Ymidinc = "y_midinc")
-
 for (outcome in OUTCOMES) {
-  outcome_lc <- outcome_snake[[outcome]]
-  figures_dir <- file.path("figures/smartcards/sims_noexpoutcomes", outcome_lc)
+  figures_dir <- file.path("figures/smartcards/sims_noexpoutcomes", outcome)
   if (!dir.exists(figures_dir)) dir.create(figures_dir, recursive = TRUE)
 
   df_outcome <- all_results %>% filter(.data$outcome == .env$outcome)
@@ -72,7 +69,7 @@ for (outcome in OUTCOMES) {
     if (n_o!=n_o_vals[1])
       fig_bias <- fig_bias + theme(legend.position = "none")
 
-    out_path <- file.path(figures_dir, sprintf("bias_%s_no%d.pdf", outcome_lc, n_o))
+    out_path <- file.path(figures_dir, sprintf("bias_no%04d.jpeg", n_o))
     ggsave(plot = fig_bias, filename = out_path, width = 3.5, height = 3)
     cat("Saved:", out_path, "\n")
 
@@ -93,7 +90,7 @@ for (outcome in OUTCOMES) {
     if (n_o!=n_o_vals[1])
       fig_coverage <- fig_coverage + theme(legend.position = "none")
 
-    out_path <- file.path(figures_dir, sprintf("coverage_%s_no%d.pdf", outcome_lc, n_o))
+    out_path <- file.path(figures_dir, sprintf("coverage_no%04d.jpeg", n_o))
     ggsave(plot = fig_coverage, filename = out_path, width = 3.5, height = 3)
     cat("Saved:", out_path, "\n")
   }

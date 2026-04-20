@@ -7,7 +7,7 @@
 # should overlap. R is represented by its standardised first principal component.
 #
 # Input:  data/clean/smartcards/data.csv
-# Output: figures/smartcards/no_direct_effect/[y_cons|y_lowinc|y_midinc]/
+# Output: figures/smartcards/no_direct_effect/[Ycons|Ylowinc|Ymidinc]/
 # =============================================================================
 
 rm(list = ls())
@@ -102,8 +102,7 @@ for (y in c(0,1)){
       )
 
     # Save figure
-    y_var_snake <- c(Ycons = "y_cons", Ylowinc = "y_lowinc", Ymidinc = "y_midinc")[[Y_var]]
-    output_path <- sprintf("figures/smartcards/no_direct_effect/%s/smartcard_r_dist_%s%s.pdf", y_var_snake, y_var_snake, y)
+    output_path <- sprintf("figures/smartcards/no_direct_effect/%s/y%s.jpeg", Y_var, y)
     dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
     ggsave(output_path, plot = density, height = 4, width = 4.5)
     cat(sprintf("Saved figure to: %s\n", output_path))

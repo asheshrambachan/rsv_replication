@@ -96,7 +96,7 @@ fig_a <- ggplot() +
   )
 
 # Save figure
-output_path <- file.path(output_dir, "map_se.pdf")
+output_path <- file.path(output_dir, "map_exp.jpeg")
 dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
 ggsave(output_path, plot = fig_a, height = 4, width = 4.5)
 cat(sprintf("Saved figure to: %s\n", output_path))
@@ -111,7 +111,7 @@ fig_b <- ggplot() +
   )
 
 # Save figure
-output_path <- file.path(output_dir, "map.pdf")
+output_path <- file.path(output_dir, "map_full.jpeg")
 ggsave(output_path, plot = fig_b, height = 4, width = 4.5)
 cat(sprintf("Saved figure to: %s\n", output_path))
 
@@ -125,7 +125,7 @@ fig_a <- ggplot() +
   )
 
 # Save figure
-output_path <- file.path(output_dir, "map_d0_y_cons0.pdf")
+output_path <- file.path(output_dir, "map_Ycons_d0_y0.jpeg")
 ggsave(output_path, plot = fig_a, height = 4, width = 4.5)
 cat(sprintf("Saved figure to: %s\n", output_path))
 
@@ -138,6 +138,6 @@ fig_b <- ggplot() +
   )
 
 # Save figure
-output_path <- file.path(output_dir, "map_d0_y_cons1.pdf")
+output_path <- file.path(output_dir, "map_Ycons_d0_y1.jpeg")
 ggsave(output_path, plot = fig_b, height = 4, width = 4.5)
 cat(sprintf("Saved figure to: %s\n", output_path))

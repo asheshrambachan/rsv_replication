@@ -45,7 +45,7 @@ for (alpha_o in alpha_o_vals) {
   y_bias_min <- min(df_slice$normalized_bias, na.rm = TRUE)
   y_bias_max <- max(df_slice$normalized_bias, na.rm = TRUE)
 
-  slug <- gsub(" ", "", gsub("-", "", alpha_o))
+  slug <- c("0 - 2 km" = "02km", "0 - 5 km" = "05km", "0 - 10 km" = "10km")[[alpha_o]]
 
   for (n_eo in n_eo_vals) {
     df <- df_slice %>% filter(.data$n_eo == .env$n_eo) %>% filter(estimator!="Benchmark")
@@ -69,7 +69,7 @@ for (alpha_o in alpha_o_vals) {
     if (n_eo != n_eo_vals[1])
       fig_bias <- fig_bias + theme(legend.position = "none")
 
-    out_path <- file.path(figures_dir, sprintf("bias_%s_%s_neo%d.pdf", tolower(outcome), slug, n_eo))
+    out_path <- file.path(figures_dir, sprintf("bias_%s_neo%d.jpeg", slug, n_eo))
     ggsave(plot = fig_bias, filename = out_path, width = 3, height = 3)
     cat("Saved:", out_path, "\n")
 
@@ -91,7 +91,7 @@ for (alpha_o in alpha_o_vals) {
     if (n_eo != n_eo_vals[1])
       fig_coverage <- fig_coverage + theme(legend.position = "none")
 
-    out_path <- file.path(figures_dir, sprintf("coverage_%s_%s_neo%d.pdf", tolower(outcome), slug, n_eo))
+    out_path <- file.path(figures_dir, sprintf("coverage_%s_neo%d.jpeg", slug, n_eo))
     ggsave(plot = fig_coverage, filename = out_path, width = 3.5, height = 3)
     cat("Saved:", out_path, "\n")
   }
@@ -111,11 +111,11 @@ relse_df <- left_join(
   mutate(rel_se = 1 - avg_se_rsv / avg_se)
 
 for (alpha_o in alpha_o_vals) {
-  slug <- gsub(" ", "", gsub("-", "", alpha_o))
+  slug <- c("0 - 2 km" = "02km", "0 - 5 km" = "05km", "0 - 10 km" = "10km")[[alpha_o]]
 
   df_slice <- relse_df %>%
     filter(.data$outcome == .env$outcome, .data$alpha_o_id == .env$alpha_o)
-  y_min <- min(df_slice$rel_se * 100, na.rm = TRUE)*5
+  y_min <- min(df_slice$rel_se * 100, na.rm = TRUE) # *5
   y_max <- max(df_slice$rel_se * 100, na.rm = TRUE)
 
   for (n_eo in n_eo_vals) {
@@ -138,7 +138,7 @@ for (alpha_o in alpha_o_vals) {
     if (n_eo != n_eo_vals[1])
       fig_relse <- fig_relse + theme(legend.position = "none")
 
-    out_path <- file.path(figures_dir, sprintf("relse_%s_%s_neo%d.pdf", tolower(outcome), slug, n_eo))
+    out_path <- file.path(figures_dir, sprintf("rel_se_%s_neo%d.jpeg", slug, n_eo))
     ggsave(plot = fig_relse, filename = out_path, width = 3.5, height = 3)
     cat("Saved:", out_path, "\n")
   }

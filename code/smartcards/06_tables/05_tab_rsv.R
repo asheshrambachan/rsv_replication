@@ -5,7 +5,7 @@
 # Rows:    RSV Estimate, Benchmark Estimate, Difference between Estimates
 #
 # Reads:  data/clean/smartcards/empirical_results.csv  (from 04_empirical/02_summarize.R)
-# Saves:  tables/smartcards/empirical/{sample}/tab_rsv.tex
+# Saves:  tables/smartcards/empirical_{sample}/tab_rsv.tex
 # ==============================================================================
 
 Y_vars     <- c("Ycons", "Ylowinc", "Ymidinc")
@@ -22,12 +22,6 @@ ncols <- length(Y_vars)
 col_header <- paste0(
   "& ",
   paste(sprintf("\\multicolumn{1}{c}{%s}", col_labels[Y_vars]), collapse = " & "),
-  " \\\\"
-)
-
-col_nums <- paste0(
-  "& ",
-  paste(sprintf("(%d)", seq_along(Y_vars)), collapse = " & "),
   " \\\\"
 )
 
@@ -62,20 +56,19 @@ for (sample in c("full", "nospillover")) {
     sprintf("\\begin{tabular}{l | %s}", paste(rep("c", ncols), collapse = "")),
     "\\toprule",
     col_header,
-    col_nums,
     "\\midrule",
-    est_row("rsv_coef",   "rsv_se",   "RSV Estimate"),
+    est_row("rsv_coef",   "rsv_se",   "RSV estimate"),
     "\\midrule",
     "\\addlinespace[0.3em]",
-    est_row("bench_coef", "bench_se", "Benchmark Estimate"),
+    est_row("bench_coef", "bench_se", "Benchmark estimate"),
     "\\midrule",
-    est_row("diff_coef",  "diff_se",  "Difference between Estimates"),
+    est_row("diff_coef",  "diff_se",  "Difference between estimates"),
     "\\bottomrule",
     "\\end{tabular}",
     "\\end{threeparttable}"
   )
 
-  out_dir <- file.path("tables/smartcards/empirical", sample)
+  out_dir <- file.path("tables/smartcards", paste0("empirical_", sample))
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
   out_path <- file.path(out_dir, "tab_rsv.tex")

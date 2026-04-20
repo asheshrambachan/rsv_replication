@@ -6,7 +6,7 @@
 # overidentifying restriction that the two representations agree.
 #
 # Reads:  data/clean/smartcards/empirical_results.csv  (from 04_empirical/02_summarize.R)
-# Saves:  tables/smartcards/empirical/{sample}/tab_estimators_jtest.tex
+# Saves:  tables/smartcards/empirical_{sample}/tab_estimators_jtest.tex
 # ==============================================================================
 
 suppressPackageStartupMessages(library(dplyr))
@@ -20,13 +20,8 @@ fmt4 <- function(x) formatC(round(x, 4), format = "f", digits = 4)
 
 ncols      <- length(Y_vars)
 col_header <- paste0(
-  "Representations: & ",
+  " & ",
   paste(sprintf("\\multicolumn{1}{c}{%s}", col_labels[Y_vars]), collapse = " & "),
-  " \\\\"
-)
-col_nums <- paste0(
-  "& ",
-  paste(sprintf("(%d)", seq_along(Y_vars)), collapse = " & "),
   " \\\\"
 )
 
@@ -44,12 +39,12 @@ for (sample in c("full", "nospillover")) {
   }
 
   jstat_row <- paste0(
-    "  $J$-statistic & ",
+    "  $J$ statistic & ",
     paste(sapply(Y_vars, function(y) fmt4(res[res$Y_var == y, "J"])), collapse = " & "),
     " \\\\"
   )
   pval_row <- paste0(
-    "  $p$-value     & ",
+    "  $p$ value     & ",
     paste(sapply(Y_vars, function(y) fmt4(res[res$Y_var == y, "p_value"])), collapse = " & "),
     " \\\\"
   )
@@ -59,11 +54,10 @@ for (sample in c("full", "nospillover")) {
     sprintf("\\begin{tabular}{l | %s}", paste(rep("c", ncols), collapse = "")),
     "\\toprule",
     col_header,
-    col_nums,
     "\\midrule",
-    est_row("rsv_coef",    "rsv_se",    "Efficient"),
+    est_row("rsv_coef",    "rsv_se",    "Optimal representation"),
     "\\addlinespace[0.3em]",
-    est_row("simple_coef", "simple_se", "Simple"),
+    est_row("simple_coef", "simple_se", "Simple representation"),
     "\\midrule",
     jstat_row,
     pval_row,
@@ -72,7 +66,7 @@ for (sample in c("full", "nospillover")) {
     "\\end{threeparttable}"
   )
 
-  out_dir <- file.path("tables/smartcards/empirical", sample)
+  out_dir <- file.path("tables/smartcards", paste0("empirical_", sample))
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
   out_path <- file.path(out_dir, "tab_estimators_jtest.tex")
   writeLines(tex, out_path)

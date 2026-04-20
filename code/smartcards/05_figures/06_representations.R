@@ -7,7 +7,7 @@
 # indicate where the efficient weighting adjusts the simple plug-in.
 #
 # Input:  data/clean/smartcards/empirical_representations.csv
-# Output: figures/smartcards/empirical_representations/{full,nospillover}/
+# Output: figures/smartcards/empirical_{full,nospillover}/representations_*.pdf
 # =============================================================================
 
 rm(list=ls())
@@ -29,7 +29,7 @@ all_weights <- fread("data/clean/smartcards/empirical_representations.csv")
 
 # Produce figures for both the main sample and the no-spillover robustness check
 for (sample in c("full", "nospillover")) {
-output_dir <- file.path("figures/smartcards/empirical_representations", sample)
+output_dir <- file.path("figures/smartcards", paste0("empirical_", sample))
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
 for (Y_var in Y_vars) {
@@ -86,7 +86,7 @@ for (Y_var in Y_vars) {
       axis.text        = element_text(color = palette$black, size = 12, family = font)
     )
 
-  out_path <- file.path(output_dir, sprintf("representations_%s.pdf", Y_var))
+  out_path <- file.path(output_dir, sprintf("representations_%s.jpeg", Y_var))
   ggsave(out_path, plot = fig, height = 4, width = 4.6)
   cat(sprintf("Saved: %s\n", out_path))
 }

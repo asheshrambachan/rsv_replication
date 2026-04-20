@@ -53,7 +53,7 @@ for (alpha_o in alpha_o_vals) {
 
     if (nrow(df) == 0) next
 
-    slug <- gsub(" ", "", gsub("-", "", alpha_o))  # e.g. "02km"
+    slug <- c("0 - 2 km" = "02km", "0 - 5 km" = "05km", "0 - 10 km" = "10km")[[alpha_o]]
 
     # Normalized bias
     fig_bias <- ggplot(df, aes(x = tau, y = normalized_bias,
@@ -72,7 +72,7 @@ for (alpha_o in alpha_o_vals) {
     if (n_o!=n_o_vals[1])
       fig_bias <- fig_bias + theme(legend.position = "none")
 
-    out_path <- file.path(figures_dir, sprintf("bias_%s_%s_no%d.pdf", tolower(outcome), slug, n_o))
+    out_path <- file.path(figures_dir, sprintf("bias_%s_no%04d.jpeg", slug, n_o))
     ggsave(plot = fig_bias, filename = out_path, width = 3.5, height = 3)
     cat("Saved:", out_path, "\n")
 
@@ -88,12 +88,12 @@ for (alpha_o in alpha_o_vals) {
         y = ifelse(n_o==n_o_vals[1], "Coverage", "")
       ) +
       scale_y_continuous(limits = c(0, 1)) +
-      bias_coverage_theme(guide, legend.position.inside = c(0.05, 0.1))
+      bias_coverage_theme(guide, legend.position.inside = c(0.05, 0.05))
 
     if (n_o!=n_o_vals[1])
       fig_coverage <- fig_coverage + theme(legend.position = "none")
 
-    out_path <- file.path(figures_dir, sprintf("coverage_%s_%s_no%d.pdf", tolower(outcome), slug, n_o))
+    out_path <- file.path(figures_dir, sprintf("coverage_%s_no%04d.jpeg", slug, n_o))
     ggsave(plot = fig_coverage, filename = out_path, width = 3.5, height = 3)
     cat("Saved:", out_path, "\n")
   }

@@ -21,8 +21,7 @@ tex <- c(
   "\\begin{threeparttable}",
   "\\begin{tabular}{l | c c c}",
   "\\toprule",
-  "Outcome: & \\shortstack{Maximum \\\\ Accuracy} & \\shortstack{Balanced \\\\ Accuracy} & \\shortstack{Random Forest \\\\ Predictions} \\\\",
-  " & (1) & (2) & (3) \\\\",
+  " & \\shortstack{Maximum \\\\ Accuracy} & \\shortstack{Balanced \\\\ Accuracy} & \\shortstack{Random Forest \\\\ Predictions} \\\\",
   "\\midrule",
   sprintf(
     "  Estimate & %s & %s & %s \\\\",

@@ -34,8 +34,8 @@ tex <- c(
   sprintf("  Common practice        &  %s  &  %s  \\\\", fmt4(val$cp_coef),    fmt4(obs$cp_coef)),
   sprintf("                         & (%s) & (%s) \\\\", fmt4(val$cp_se),      fmt4(obs$cp_se)),
   "\\midrule",
-  sprintf("  $J$-statistic & %s & %s \\\\", fmt4(val$J),       fmt4(obs$J)),
-  sprintf("  $p$-value     & %s & %s \\\\", fmt4(val$p_value), fmt4(obs$p_value)),
+  sprintf("  $J$ statistic & %s & %s \\\\", fmt4(val$J),       fmt4(obs$J)),
+  sprintf("  $p$ value     & %s & %s \\\\", fmt4(val$p_value), fmt4(obs$p_value)),
   "\\bottomrule",
   "\\end{tabular}",
   "\\end{threeparttable}"
