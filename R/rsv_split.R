@@ -152,18 +152,8 @@ rsv_split <- function(Y, D, S_e, S_o, R,
     sigma2.quantile = sigma2.quantile,
     pred_y_only     = TRUE
   )
-  denom_raw <- estimate$denominator$denominator
-  relevance <- if ((length(y_levels) > 2) || (length(denom_raw) > 1)) {
-    NA_real_
-  } else {
-    as.numeric(denom_raw[[1]])
-  }
-  denom_naive_raw <- naive_result$denominator$denominator
-  relevance_naive <- if ((length(y_levels) > 2) || (length(denom_naive_raw) > 1)) {
-    NA_real_
-  } else {
-    as.numeric(denom_naive_raw[[1]])
-  }
+  relevance       <- estimate$relevance_ate
+  relevance_naive <- naive_result$relevance_ate
 
   # Construct result object
   result <- list(

@@ -1,13 +1,12 @@
 # =============================================================================
-# Maps (S definition)
+# Map (Stilde overlap design)
 #
-# Produces four maps of the study area using the non-overlapping sample
-# definition S. Buffer Mandals (2011) are assigned S=e only.
+# Produces one map of the study area using the overlap sample definition
+# Stilde. Buffer Mandals (2011) are assigned Stilde=e,o and appear in the
+# legend as "Validation: D=0" (distinct from pure experimental or observational
+# villages), reflecting their role as overlap units in the Stilde design.
 #
-#   map_exp.jpeg          -- experimental villages, coloured by treatment arm (D)
-#   map_full.jpeg         -- experimental + observational villages, coloured by arm (D)
-#   map_Ycons_d0_y0.jpeg  -- untreated (D=0) villages with Ycons=0, coloured by sample
-#   map_Ycons_d0_y1.jpeg  -- untreated (D=0) villages with Ycons=1, coloured by sample
+#   map_full_Stilde.jpeg  -- all villages, coloured by sample (Stilde definition)
 #
 # Input:  data/clean/smartcards/data.csv
 # Output: figures/smartcards/maps/
@@ -27,13 +26,13 @@ source("code/utils/fte_theme.R")
 # Joins village-level data to shrids shapefile and builds a layered ggplot list
 # (state background, village fills, district borders, legend).
 base_map <- function(data, fill, guide, legend.position.inside = c(0.73,0.234)) {
-
+  
   # Load shapefiles
   state <- st_read("data/clean/smartcards/shapefiles/state.gpkg", quiet=T)
   districts <- st_read("data/clean/smartcards/shapefiles/districts.gpkg", quiet=T)
   shrids <- st_read("data/clean/smartcards/shapefiles/shrids.gpkg", quiet=T)
   data <- right_join(shrids, data, by="shrid2")
-
+  
   list(
     geom_sf(data = state, fill=palette$gray, color=NA),
     geom_sf(data = data, aes(fill=!!ensym(fill)), color="white", linewidth=0.04),
@@ -60,11 +59,11 @@ dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 data <- readr::read_csv(
   "data/clean/smartcards/data.csv",
   col_select = c(shrid2, wave, Ycons)
-  ) %>%
+) %>%
   mutate(
     S = case_when(
       wave == "Experimental: Treated (2010)"   ~ "e",
-      wave == "Experimental: Untreated (2011)" ~ "e",
+      wave == "Experimental: Untreated (2011)" ~ "e,o",
       wave == "Experimental: Untreated (2012)" ~ "e",
       wave == "Observational (N/A)"            ~ "o"
     ),
@@ -76,35 +75,13 @@ data <- readr::read_csv(
   distinct()
 
 # Figure 1 guide: colour by sample x treatment arm (D); Y not shown
-# Figure 2 guide: colour by sample only (e vs o); Y=0/1 distinguished by plot panel
 guide_fig1 <- data.frame(
-  breaks = c("e1", "e0", "o0"),
-  labels = c("Experimental: *D=1*", "Experimental: *D=0*", "Observational: *D=0*"),
-  colors = c(palette$darkblue, palette$blue, palette$green)
-)
-guide_fig2 <- data.frame(
-  breaks = c("e01", "e00", "o01", "o00"),
-  labels = c("Experimental: *D=0, Y=1*", "Experimental: *D=0, Y=0*", "Observational: *D=0, Y=1*", "Observational: *D=0, Y=0*"),
-  colors = c(palette$blue, palette$blue, palette$green, palette$green)
+  breaks = c("e1", "e0", "e,o0", "o0"),
+  labels = c("Experimental: *D=1*", "Experimental: *D=0*", "Validation: *D=0*", "Observational: *D=0*"),
+  colors = c(palette$darkblue, palette$blue, palette$teal, palette$green)
 )
 
-
-# Figure 1 (a): Experimental villages only
-fig_a <- ggplot() +
-  base_map(
-    data = filter(data, S == "e"),
-    fill = SD,
-    guide = guide_fig1,
-    legend.position.inside = c(0.715,0.234)
-  )
-
-# Save figure
-output_path <- file.path(output_dir, "map_exp.jpeg")
-dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
-ggsave(output_path, plot = fig_a, height = 4, width = 4.5)
-cat(sprintf("Saved figure to: %s\n", output_path))
-
-# Figure 1 (b): Experimental and observational villages
+# Figure 1: Experimental and observational villages
 fig_b <- ggplot() +
   base_map(
     data = data,
@@ -114,33 +91,6 @@ fig_b <- ggplot() +
   )
 
 # Save figure
-output_path <- file.path(output_dir, "map_full.jpeg")
-ggsave(output_path, plot = fig_b, height = 4, width = 4.5)
-cat(sprintf("Saved figure to: %s\n", output_path))
-
-
-# Figure 2 (a): Units with D = 0 and Ycons = 0
-fig_a <- ggplot() +
-  base_map(
-    data = filter(data, D == 0, Y == 0),
-    fill = SDY,
-    guide = guide_fig2
-  )
-
-# Save figure
-output_path <- file.path(output_dir, "map_Ycons_d0_y0.jpeg")
-ggsave(output_path, plot = fig_a, height = 4, width = 4.5)
-cat(sprintf("Saved figure to: %s\n", output_path))
-
-# Figure 2 (b): Units with D = 0 and Ycons = 1
-fig_b <- ggplot() +
-  base_map(
-    data = filter(data, D == 0, Y == 1),
-    fill = SDY,
-    guide = guide_fig2
-  )
-
-# Save figure
-output_path <- file.path(output_dir, "map_Ycons_d0_y1.jpeg")
+output_path <- file.path(output_dir, "map_full_Stilde.jpeg")
 ggsave(output_path, plot = fig_b, height = 4, width = 4.5)
 cat(sprintf("Saved figure to: %s\n", output_path))

@@ -1,14 +1,20 @@
 # =============================================================================
-# Assumption 2(i) — Stability: Density Figures
+# Assumption 2(i) -- Stability: Density Figures (S definition)
 #
 # Visualises f(R | S=e, D=d, Y=y) vs f(R | S=o, D=d, Y=y) for each
-# treatment arm, outcome, and level of Y. Supports the stability assumption
-# (S ⊥ R | X, D, Y): if the sensing mechanism is stable across samples, the
-# experimental and observational densities should overlap within each (D, Y)
-# cell. R is represented by its standardised first principal component.
+# treatment arm, outcome, and level of Y, using the non-overlapping sample
+# definition S. Buffer Mandals (2011) are assigned S=e only.
+#
+# Supports the stability assumption: if the sensing mechanism f(R | D, Y) is
+# stable across samples, the experimental and observational densities should
+# overlap within each (D, Y) cell. R is represented by its standardised first
+# principal component.
+#
+# See 04_stability_Stilde.R for the analogous figures using the overlap design
+# Stilde, where Buffer Mandals (2011) appear in both Stilde=e and Stilde=o.
 #
 # Input:  data/clean/smartcards/data.csv
-# Output: figures/smartcards/stability/[Ycons|Ylowinc|Ymidinc]/
+# Output: figures/smartcards/stability_S/[Ycons|Ylowinc|Ymidinc]/
 # =============================================================================
 
 rm(list = ls())
@@ -108,7 +114,7 @@ for (d in c(0,1)){
         )
 
       # Save figure
-      output_path <- sprintf("figures/smartcards/stability/%s/d%s_y%s.jpeg", Y_var, d, y)
+      output_path <- sprintf("figures/smartcards/stability_S/%s/d%s_y%s.jpeg", Y_var, d, y)
       dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
       ggsave(output_path, plot = density, height = 4, width = 4.5)
       cat(sprintf("Saved figure to: %s\n", output_path))

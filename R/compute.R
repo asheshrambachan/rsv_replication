@@ -5,6 +5,38 @@ library(dplyr)
 # Mathematical functions for computing RSV treatment effect estimates
 # =============================================================================
 
+#' ATE-specific relevance: (lambda' J^{-1} lambda)^{-1}, optionally pi-weighted over strata
+#'
+#' For a single stratum (no X): (lambda' J^{-1} lambda)^{-1}.
+#' For K=2 with {0,1} outcomes and yK=0 this reduces to J (the existing scalar).
+#' For multiple strata: pi-weighted average of per-stratum relevances,
+#'   sum_x pi(x) * (lambda' J(x)^{-1} lambda)^{-1}
+#' where pi_weights must be supplied (same weights used for theta_ATE).
+#' Returns NA when J is non-invertible or all strata are NA.
+#'
+#' @keywords internal
+compute_relevance_ate <- function(denom_raw, y_levels, yK, pi_weights = NULL) {
+  yj_levels <- setdiff(y_levels, yK)
+  lambda    <- as.numeric(yj_levels) - as.numeric(yK)
+  scalar_rel <- function(J) {
+    if (!is.matrix(J) || !all(is.finite(J))) return(NA_real_)
+    tryCatch(
+      as.numeric(1 / drop(t(lambda) %*% solve(J) %*% lambda)),
+      error = function(e) NA_real_
+    )
+  }
+  if (length(denom_raw) == 1) {
+    scalar_rel(denom_raw[[1]])
+  } else if (!is.null(pi_weights) && length(pi_weights) == length(denom_raw)) {
+    rels  <- vapply(denom_raw, scalar_rel, FUN.VALUE = numeric(1))
+    valid <- !is.na(rels)
+    if (!any(valid)) return(NA_real_)
+    sum(pi_weights[valid] * rels[valid]) / sum(pi_weights[valid])
+  } else {
+    NA_real_
+  }
+}
+
 #' Ensure S_e and S_o are numeric
 #'
 #' Converts logical sample indicators to numeric (0/1) if needed.
@@ -79,7 +111,9 @@ compute_counts <- function(df, y_levels, X_cols = character(0)) {
       values_fill  = 0,
       names_prefix = "Y"
     )
-  YSo[YSo==0] <- NA
+  # Set zero counts to NA, but only on the count columns — never on X_cols which may equal 0
+  cnt_cols <- setdiff(names(YSo), X_cols)
+  YSo[cnt_cols][YSo[cnt_cols] == 0] <- NA
 
   # Join; if no X_cols, cross join of one-row tables
   if (length(X_cols) == 0) {
@@ -439,7 +473,8 @@ compute_theta <- function(
     y_levels,
     sigma2.lower = NULL,
     sigma2.quantile = 0.01,
-    pred_y_only = FALSE
+    pred_y_only = FALSE,
+    weights = NULL
   ) {
 
   # 1) Compute H (same rows as df)
@@ -451,6 +486,7 @@ compute_theta <- function(
   X_cols <- names(theta_init)[!startsWith(names(theta_init), "theta_Y")]
   delta_df <- compute_deltas(df, y_levels = y_levels, yK = yK, X_cols = X_cols, use_pred = FALSE)
   merged_df <- dplyr::bind_cols(delta_df, H_df)
+  if (!is.null(weights)) merged_df[[".__bb_w__"]] <- weights
   
   delta_o_cols <- names(merged_df)[grepl("^delta_o_Y", names(merged_df))]
   H_cols       <- names(merged_df)[grepl("^H_Y", names(merged_df))]
@@ -463,8 +499,14 @@ compute_theta <- function(
     O <- as.matrix(d[, delta_o_cols, drop = FALSE])  # n x (K-1)
     e <- as.matrix(d[, "delta_e", drop = FALSE])     # n
     n_d <- nrow(d)
-    denom <- crossprod(B, O) / n_d  # (K-1) x (K-1)
-    num   <- crossprod(B, e) / n_d  # (K-1) x 1
+    if (".__bb_w__" %in% names(d)) {
+      w     <- d[[".__bb_w__"]]
+      denom <- crossprod(B * w, O)
+      num   <- crossprod(B * w, e)
+    } else {
+      denom <- crossprod(B, O) / n_d  # (K-1) x (K-1)
+      num   <- crossprod(B, e) / n_d  # (K-1) x 1
+    }
     
     theta <- as.numeric(solve_ls(num, denom))
     names(theta) <- gsub("^delta_o_", "theta_", delta_o_cols)
@@ -507,16 +549,20 @@ compute_theta <- function(
 #' Computes theta_ATE = sum_x w_x * theta_x where w_x = n_x / n
 #'
 #' @keywords internal
-compute_theta_ate <- function(df, theta) {
+compute_theta_ate <- function(df, theta, stratum_weights = NULL) {
   X_cols <- names(theta)[!startsWith(names(theta), "theta_Y")]
-  
+
   if (length(X_cols)==0) {
     theta
   } else {
-    wX <- df %>%
-      count(across(all_of(X_cols)), name = "n") %>%
-      mutate(w = n / sum(n)) %>%
-      select(-n)
+    wX <- if (!is.null(stratum_weights)) {
+      dplyr::rename(stratum_weights, w = .__w_sum__)
+    } else {
+      df %>%
+        count(across(all_of(X_cols)), name = "n") %>%
+        mutate(w = n / sum(n)) %>%
+        select(-n)
+    }
 
     theta %>%
       left_join(wX, by = X_cols) %>%
@@ -548,8 +594,7 @@ compute_theta0 <- function(theta_ate, y_levels, yK) {
   # Extract theta values in order
   theta_vec <- as.numeric(theta_ate[1, paste0("theta_Y", yj_levels), drop = TRUE])
 
-  theta_sum <- sum(theta_vec, na.rm = TRUE)
-  theta0 <- sum(yj_levels * theta_vec, na.rm = TRUE) + yK * (1 - theta_sum)
+  theta0 <- sum((yj_levels - yK) * theta_vec, na.rm = TRUE)
   theta0
 }
 
@@ -587,7 +632,7 @@ compute_theta0 <- function(theta_ate, y_levels, yK) {
 #'
 #' @keywords internal
 compute_estimate <- function(df, theta_init, y_levels, sigma2.lower = NULL, sigma2.quantile = 0.01,
-                            pred_y_only = FALSE) {
+                            pred_y_only = FALSE, weights = NULL) {
   # load("~/Documents/remoteoutcome_v2/data/pred_real_Ycons.rda")
   # df <- pred_real_Ycons %>% mutate(pred_Y1 = pred_Y, pred_Y0 = 1-pred_Y, X1 = runif(n())>0.5)
   # theta_init <- compute_theta_init(df, X_cols = c("X1"), yK=0)
@@ -605,20 +650,38 @@ compute_estimate <- function(df, theta_init, y_levels, sigma2.lower = NULL, sigm
   
   # Compute final theta
   theta_df <- compute_theta(df, theta_init, y_levels = y_levels, sigma2.lower = sigma2.lower,
-                            sigma2.quantile = sigma2.quantile, pred_y_only = pred_y_only)
+                            sigma2.quantile = sigma2.quantile, pred_y_only = pred_y_only,
+                            weights = weights)
   theta <- theta_df$theta
-  
-  # Average across X strata
-  theta_ate <- compute_theta_ate(df, theta)
+
+  # Average across X strata; optional observation weights (e.g. clustered bootstrap)
+  X_cols_est <- names(theta_init)[!startsWith(names(theta_init), "theta_Y")]
+  strat_w <- if (!is.null(weights) && length(X_cols_est) > 0) {
+    w_df <- df[, X_cols_est, drop = FALSE]
+    w_df[[".__bb_w__"]] <- weights
+    dplyr::group_by(w_df, dplyr::across(dplyr::all_of(X_cols_est))) %>%
+      dplyr::summarise(.__w_sum__ = sum(.__bb_w__), .groups = "drop")
+  } else NULL
+  theta_ate <- compute_theta_ate(df, theta, stratum_weights = strat_w)
 
   # Convert to scalar
   yK <- .get_yK_value(y_levels, theta_init)
   theta0 <- compute_theta0(theta_ate, y_levels = y_levels, yK = yK)
-  
+
+  # ATE-specific relevance: (lambda' J^{-1} lambda)^{-1} pooled with pi weights
+  denom_list <- theta_df$denominator$denominator
+  pi_weights <- if (length(X_cols_est) > 0 && length(denom_list) > 1) {
+    counts   <- dplyr::count(df, dplyr::across(dplyr::all_of(X_cols_est)))
+    denom_joined <- dplyr::left_join(theta_df$denominator, counts, by = X_cols_est)
+    denom_joined$n / sum(denom_joined$n)
+  } else NULL
+  relevance_ate <- compute_relevance_ate(denom_list, y_levels, yK, pi_weights)
+
   list(
     coefficients = structure(theta0, names = "D"),
     numerator = theta_df$numerator,
     denominator = theta_df$denominator,
+    relevance_ate = relevance_ate,
     weights = theta_df$H,
     theta_init = theta_init,
     theta = theta,

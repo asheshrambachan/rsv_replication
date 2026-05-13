@@ -69,8 +69,8 @@ for (Y_var in Y_vars) {
                aes(x = x, y = fit),
                color = palette$black, size = 0.8) +
     labs(
-      x = "Simple representation *P(Y=1 | R, S = o)*",
-      y = "Efficient representation *H(R)*"
+      x = "Simple representation",
+      y = "Optimal representation"
     ) +
     scale_x_continuous(limits = c(0, 1), minor_breaks = seq(0, 1, 0.05)) +
     scale_y_continuous(minor_breaks = seq(-2, 5, 0.2)) +

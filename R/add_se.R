@@ -172,6 +172,7 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
     object$se        <- result$se
     object$vcov      <- result$vcov
     object$influence <- result$influence
+    object$cond_J    <- result$influence$cond_J
 
   } else if (method == "score_bootstrap") {
     # --- Score bootstrap (fast: resample predictions, no model refitting) ---
@@ -198,6 +199,8 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
     object$relevance_naive_se  <- boot_result$relevance_naive_se
     object$vcov                <- boot_result$vcov
     object$bootstrap           <- boot_result$bootstrap
+    object$cond_J_median       <- boot_result$bootstrap$kappa_J_median
+    object$cond_J_max          <- boot_result$bootstrap$kappa_J_max
 
   } else {
     # --- Bootstrap SE (expensive: refits models in every fold × replicate) ---
@@ -285,9 +288,6 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
         sigma2.lower = sigma2.lower,
         sigma2.quantile = sigma2.quantile
       )
-      denom <- est_b$denominator$denominator
-      denom_val <- if ((length(y_levels) > 2) | (length(denom) > 1)) NA_real_ else as.numeric(denom[[1]])
-
       # Naive estimate
       est_naive_b <- compute_estimate(
         df              = df_b,
@@ -297,11 +297,8 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
         sigma2.quantile = sigma2.quantile,
         pred_y_only     = TRUE
       )
-      denom_naive <- est_naive_b$denominator$denominator
-      denom_naive_val <- if ((length(y_levels) > 2) | (length(denom_naive) > 1)) NA_real_ else as.numeric(denom_naive[[1]])
-
-      c(coef = unname(est_b$coefficients), denominator = denom_val,
-        coef_naive = unname(est_naive_b$coefficients), denominator_naive = denom_naive_val)
+      c(coef = unname(est_b$coefficients), denominator = est_b$relevance_ate,
+        coef_naive = unname(est_naive_b$coefficients), denominator_naive = est_naive_b$relevance_ate)
     }, error = function(e) {
       c(coef = NA_real_, denominator = NA_real_, coef_naive = NA_real_, denominator_naive = NA_real_)
     })
@@ -385,48 +382,59 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
     unique_clusters <- unique(clusters)
   }
 
+  C      <- length(unique_clusters)
+  cl_idx <- match(cluster_ids, unique_clusters)
+  cl_sizes <- tabulate(cl_idx, nbins = C)
+
   run_one <- function(b) {
     seed_b <- if (!is.null(seed)) seed + b else NA_integer_
     if (!is.na(seed_b)) set.seed(seed_b)
 
-    # Resample all n observations — predictions are fixed so fold structure
-    # is irrelevant; no fold stratification or between-fold correction needed
-    clusters_b <- sample(unique_clusters, length(unique_clusters), replace = TRUE)
+    clusters_b <- sample(unique_clusters, C, replace = TRUE)
     idx_b      <- unlist(lapply(clusters_b, function(cl) which(cluster_ids == cl)))
-    df_b       <- df_pooled[idx_b, , drop = FALSE]
+    df_use     <- df_pooled[idx_b, , drop = FALSE]
+    w_use      <- NULL
 
     tryCatch({
       # RSV estimate
       est_b <- compute_estimate(
-        df              = df_b,
-        theta_init      = theta_init,
-        y_levels        = y_levels,
-        sigma2.lower    = sigma2.lower,
-        sigma2.quantile = sigma2.quantile
-      )
-      denom <- est_b$denominator$denominator
-      rel_val <- if ((length(y_levels) > 2) || (length(denom) > 1)) NA_real_ else as.numeric(denom[[1]])
-
-      # Naive estimate
-      est_naive_b <- compute_estimate(
-        df              = df_b,
+        df              = df_use,
         theta_init      = theta_init,
         y_levels        = y_levels,
         sigma2.lower    = sigma2.lower,
         sigma2.quantile = sigma2.quantile,
-        pred_y_only     = TRUE
+        weights         = w_use
       )
-      denom_naive <- est_naive_b$denominator$denominator
-      rel_naive_val <- if ((length(y_levels) > 2) || (length(denom_naive) > 1)) NA_real_ else as.numeric(denom_naive[[1]])
+      denom     <- est_b$denominator$denominator
+      rel_val   <- est_b$relevance_ate
+
+      # kappa(J) for this resample: one J matrix per X stratum, take the max
+      kappa_J_b <- max(vapply(denom, function(J)
+        if (is.matrix(J) && nrow(J) > 1 && all(is.finite(J))) kappa(J, exact = TRUE) else NA_real_,
+        FUN.VALUE = numeric(1)), na.rm = TRUE)
+
+      # Naive estimate
+      est_naive_b <- compute_estimate(
+        df              = df_use,
+        theta_init      = theta_init,
+        y_levels        = y_levels,
+        sigma2.lower    = sigma2.lower,
+        sigma2.quantile = sigma2.quantile,
+        pred_y_only     = TRUE,
+        weights         = w_use
+      )
+      rel_naive_val <- est_naive_b$relevance_ate
 
       c(seed_b       = seed_b,
         coef         = unname(est_b$coefficients),
         relevance    = rel_val,
         coef_naive   = unname(est_naive_b$coefficients),
-        relevance_naive = rel_naive_val)
+        relevance_naive = rel_naive_val,
+        kappa_J      = kappa_J_b)
     }, error = function(e) {
       c(seed_b = seed_b, coef = NA_real_, relevance = NA_real_,
-        coef_naive = NA_real_, relevance_naive = NA_real_)
+        coef_naive = NA_real_, relevance_naive = NA_real_,
+        kappa_J = NA_real_)
     })
   }
 
@@ -436,6 +444,7 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
   boot_coefs_naive  <- vapply(boot_results, function(x) x["coef_naive"],      FUN.VALUE = numeric(1))
   boot_rels_naive   <- vapply(boot_results, function(x) x["relevance_naive"], FUN.VALUE = numeric(1))
   boot_seeds        <- vapply(boot_results, function(x) x["seed_b"],          FUN.VALUE = numeric(1))
+  boot_kappas       <- vapply(boot_results, function(x) x["kappa_J"],         FUN.VALUE = numeric(1))
 
   se                <- stats::sd(boot_coefs,       na.rm = TRUE)
   relevance_se      <- stats::sd(boot_rels,        na.rm = TRUE)
@@ -453,12 +462,15 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
     relevance_naive_se = relevance_naive_se,
     vcov               = structure(matrix(se^2, 1, 1), dimnames = list("D", "D")),
     bootstrap = list(
-      B          = B,
-      n_failed   = n_failed,
-      clusters   = if (is.null(clusters)) NULL else "provided",
-      seed       = seed,
-      tau_draws  = boot_coefs,
-      seed_draws = boot_seeds
+      B              = B,
+      n_failed       = n_failed,
+      clusters       = if (is.null(clusters)) NULL else "provided",
+      seed           = seed,
+      tau_draws      = boot_coefs,
+      seed_draws     = boot_seeds,
+      kappa_J_draws  = boot_kappas,
+      kappa_J_median = median(boot_kappas, na.rm = TRUE),
+      kappa_J_max    = max(boot_kappas,    na.rm = TRUE)
     )
   )
 }
@@ -571,8 +583,7 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
         sigma2.lower    = sigma2.lower,
         sigma2.quantile = sigma2.quantile
       )
-      denom <- est_b$denominator$denominator
-      rel_val <- if ((length(y_levels) > 2) || (length(denom) > 1)) NA_real_ else as.numeric(denom[[1]])
+      rel_val <- est_b$relevance_ate
 
       # Naive estimate
       est_naive_b <- compute_estimate(
@@ -583,8 +594,7 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
         sigma2.quantile = sigma2.quantile,
         pred_y_only     = TRUE
       )
-      denom_naive <- est_naive_b$denominator$denominator
-      rel_naive_val <- if ((length(y_levels) > 2) || (length(denom_naive) > 1)) NA_real_ else as.numeric(denom_naive[[1]])
+      rel_naive_val <- est_naive_b$relevance_ate
 
       c(seed_b         = if (!is.null(seed)) seed + b else NA_real_,
         coef           = unname(est_b$coefficients),
@@ -750,6 +760,7 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
     # J(x) = (1/n_x) H' Delta_o,   a(x) = (1/n_x) H' Delta_e   (tex: A(x)^{-1}, a)
     J_x     <- crossprod(H_x, delta_o) / n_x   # M x M
     a_x     <- drop(crossprod(H_x, delta_e)) / n_x  # M
+    kappa_J <- if (all(is.finite(J_x))) kappa(J_x, exact = TRUE) else NA_real_
     J_x_inv <- solve(J_x)
     theta_x <- drop(J_x_inv %*% a_x)           # theta(x) = J(x)^{-1} a(x)
 
@@ -777,7 +788,8 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
 
     list(psi_theta = psi_theta, theta_x = theta_x,
          J_x = J_x, J_x_inv = J_x_inv,
-         tau_x = sum(lambda * theta_x) + as.numeric(yK))
+         tau_x = sum(lambda * theta_x),
+         kappa_J = kappa_J)
   }
 
   # -----------------------------------------------------------------------
@@ -799,7 +811,8 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
       theta_hat = theta_hat,
       J         = res$J_x,
       J_inv     = res$J_x_inv,
-      lambda    = lambda
+      lambda    = lambda,
+      cond_J    = res$kappa_J
     )
 
   # -----------------------------------------------------------------------
@@ -819,13 +832,16 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
     P_Se       <- mean(S_e == 1)   # hat P(S=e)
     psi_tau0   <- numeric(n)
     tau_by_obs <- numeric(n)
+    cell_kappas <- numeric(length(unique_cells))
 
-    for (cx in unique_cells) {
+    for (ci in seq_along(unique_cells)) {
+      cx    <- unique_cells[ci]
       idx_x <- which(cell_labels == cx)
       n_x   <- length(idx_x)
       res   <- cell_influence(idx_x)
 
       tau_by_obs[idx_x] <- res$tau_x
+      cell_kappas[ci]   <- res$kappa_J
 
       # pi(x)/P(X=x) = [count(X=x,S=e)/n / P(S=e)] / [n_x/n]
       n_xe  <- sum(S_e[idx_x] == 1)
@@ -843,11 +859,13 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
     # xi term: hat_xi_i = P(S=e)^{-1} 1{S_i=e} (tau(X_i) - tau_bar)
     psi_tau0 <- psi_tau0 + as.numeric(S_e == 1) * (tau_by_obs - tau_bar) / P_Se
 
+    max_kappa_J <- if (all(is.na(cell_kappas))) NA_real_ else max(cell_kappas, na.rm = TRUE)
     inf_out <- list(
       psi_tau0   = psi_tau0,
       tau_by_obs = tau_by_obs,
       tau_bar    = tau_bar,
-      lambda     = lambda
+      lambda     = lambda,
+      cond_J     = max_kappa_J
     )
   }
 

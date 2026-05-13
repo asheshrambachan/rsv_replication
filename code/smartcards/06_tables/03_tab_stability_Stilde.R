@@ -4,17 +4,22 @@ suppressPackageStartupMessages({
 
 
 # ==============================================================================
-# Assumption 2(i) — Stability: KS table
+# Assumption 2(i) -- Stability: KS table (Stilde overlap design)
 #
-# Tabulates the KS test results from 02_assumption_tests/02_stability.R.
-# Reports F(R_PC1 | S=e, D=0, Y=y) vs F(R_PC1 | S=o, D=0, Y=y) for each
-# outcome and level of Y. Failure to reject supports S ⊥ R | D=0, Y.
+# Tabulates the KS test results from 02_assumption_tests/03_stability_Stilde.R.
+# Reports F(R_PC1 | Stilde=e, D=0, Y=y) vs F(R_PC1 | Stilde=o, D=0, Y=y) for
+# each outcome and level of Y using the overlap sample definition Stilde.
+# Buffer Mandals (2011) appear in both Stilde=e and Stilde=o. Failure to
+# reject supports R ⊥ Stilde | D=0, Y.
 #
-# Input:  data/clean/smartcards/assumption_stability.csv
-# Output: tables/smartcards/tab_stability.tex
+# See 02_tab_stability_S.R for the analogous table using the non-overlapping
+# definition S, where Buffer Mandals appear only in S=e.
+#
+# Input:  data/clean/smartcards/assumption_stability_Stilde.csv
+# Output: tables/smartcards/tab_stability_Stilde.tex
 # ==============================================================================
 
-ks <- read.csv("data/clean/smartcards/assumption_stability.csv")
+ks <- read.csv("data/clean/smartcards/assumption_stability_Stilde.csv")
 
 Y_vars     <- c("Ycons", "Ylowinc", "Ymidinc")
 col_labels <- c(Ycons = "Consumption", Ylowinc = "Low income", Ymidinc = "Middle income")
@@ -72,6 +77,6 @@ latex_table <- paste(lines, collapse = "\n")
 # ------------------------------------------------------------------------------
 tables_dir <- "tables/smartcards"
 if (!dir.exists(tables_dir)) dir.create(tables_dir, recursive = TRUE)
-out_path <- file.path(tables_dir, "tab_stability.tex")
+out_path <- file.path(tables_dir, "tab_stability_Stilde.tex")
 writeLines(latex_table, out_path)
 cat("Saved:", out_path, "\n")
