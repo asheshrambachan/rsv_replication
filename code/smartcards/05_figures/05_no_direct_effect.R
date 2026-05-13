@@ -27,7 +27,7 @@ data <- read_csv("data/clean/smartcards/data.csv",
   mutate(
     S = case_when(
       wave == "Experimental: Treated (2010)"   ~ "e",
-      wave == "Experimental: Untreated (2011)" ~ "e",
+      wave == "Experimental: Untreated (2011)" ~ "e,o",
       wave == "Experimental: Untreated (2012)" ~ "e",
       wave == "Observational (N/A)"            ~ "o"
     ),
@@ -61,8 +61,8 @@ for (y in c(0,1)){
     )
 
     group_labels <- c(
-      D0_e = paste0("Experimental: *D=0, Y=", y, "*"),
-      D1_e = paste0("Experimental: *D=1, Y=", y, "*")
+      D0_e = paste0("Experimental and validation: *D=0, Y=", y, "*"),
+      D1_e = paste0("Experimental and validation: *D=1, Y=", y, "*")
     )
 
     density <- ggplot(data_yd, aes(x = R_PC1_scaled,

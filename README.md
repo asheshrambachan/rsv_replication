@@ -97,7 +97,7 @@ replication_package/
 │   ├── smartcards/                 # India smartcard application
 │   │   ├── 00_run_all.R
 │   │   ├── 01_data_construction/   # Prepare survey data, satellite features, PCA
-│   │   ├── 02_assumption_tests/    # No-direct-effect and stability tests (KS)
+│   │   ├── 02_assumption_tests/    # No-direct-effect and stability tests (KS) for S and Stilde
 │   │   ├── 03_sims_noexpoutcomes/  # Simulation: no experimental outcomes
 │   │   ├── 04_empirical/           # Empirical estimation and summarize scripts
 │   │   ├── 05_figures/             # Figures
@@ -125,7 +125,8 @@ replication_package/
 │   │   └── sims_expoutcomes_Ybin/  # Simulation figures: experimental outcomes
 │   └── smartcards/
 │       ├── maps/                   # Study area maps
-│       ├── stability/              # Stability assumption density plots
+│       ├── stability_S/            # Stability assumption density plots (S definition)
+│       ├── stability_Stilde/       # Stability assumption density plots (Stilde definition)
 │       ├── no_direct_effect/       # No-direct-effect assumption density plots
 │       ├── sims_noexpoutcomes/     # Simulation figures: no experimental outcomes
 │       ├── empirical_full/         # Empirical results: main sample

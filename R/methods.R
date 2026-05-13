@@ -233,6 +233,11 @@ print.cv.rsv <- function(x, digits = 4, ...) {
   cat(sprintf("  ATE: %.*f", digits, x$coefficients))
   if (!is.null(x$se)) cat(sprintf(" (SE: %.*f)", digits, x$se))
   cat("\n")
+  if (!is.null(x$cond_J))
+    cat(sprintf("  Score matrix kappa(J): %.1f\n", x$cond_J))
+  if (!is.null(x$cond_J_median) && !is.na(x$cond_J_median))
+    cat(sprintf("  Score matrix kappa(J): median=%.1f  max=%.1f  (over %d bootstrap draws)\n",
+                x$cond_J_median, x$cond_J_max, x$bootstrap$B))
   if (!is.null(x$relevance)) cat(sprintf("  Relevance: %.*f", digits, x$relevance))
   if (!is.null(x$relevance_se)) cat(sprintf(" (SE: %.*f)", digits, x$relevance_se))
   if (!is.null(x$relevance)) cat("\n")
@@ -299,6 +304,11 @@ summary.cv.rsv <- function(object, ...) {
     cat("Average coefficient:\n")
     stats::printCoefmat(coef_table, digits = 4, signif.stars = TRUE,
                         P.values = TRUE, has.Pvalue = TRUE)
+    if (!is.null(object$cond_J))
+      cat(sprintf("Score matrix kappa(J): %.1f\n", object$cond_J))
+    if (!is.null(object$cond_J_median) && !is.na(object$cond_J_median))
+      cat(sprintf("Score matrix kappa(J): median=%.1f  max=%.1f  (over %d bootstrap draws)\n",
+                  object$cond_J_median, object$cond_J_max, object$bootstrap$B))
     cat("\n")
   } else {
     cat(sprintf("Average coefficient: %.4f\n", object$coefficients))

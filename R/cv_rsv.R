@@ -177,13 +177,7 @@ cv.rsv <- function(Y, D, S_e, S_o, R,
     sigma2.quantile = sigma2.quantile
   )
 
-  # Relevance: E_n[H_d(R) * delta_o(d)] — scalar for binary Y with no X; NA otherwise
-  denom_raw <- pooled_result$denominator$denominator
-  relevance <- if ((length(y_levels) > 2) || (length(denom_raw) > 1)) {
-    NA_real_
-  } else {
-    as.numeric(denom_raw[[1]])
-  }
+  relevance <- pooled_result$relevance_ate
 
   # Naive estimate: H = P(Y=yj|D=d,R) (always computed alongside RSV)
   naive_result <- compute_estimate(
@@ -194,12 +188,7 @@ cv.rsv <- function(Y, D, S_e, S_o, R,
     sigma2.quantile = sigma2.quantile,
     pred_y_only     = TRUE
   )
-  denom_naive_raw <- naive_result$denominator$denominator
-  relevance_naive <- if ((length(y_levels) > 2) || (length(denom_naive_raw) > 1)) {
-    NA_real_
-  } else {
-    as.numeric(denom_naive_raw[[1]])
-  }
+  relevance_naive <- naive_result$relevance_ate
 
   # Total sample sizes
   n.obs  <- sum(S_o == 1 | S_o == TRUE)
