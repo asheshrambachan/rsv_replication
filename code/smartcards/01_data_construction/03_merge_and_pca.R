@@ -43,6 +43,13 @@ viirs_annual       <- readRDS("data/interim/smartcards/viirs.Rds")
 satellite_features <- readRDS("data/interim/smartcards/satellite_features.Rds")
 centroid_coords    <- readRDS("data/interim/smartcards/centroid_coords.Rds")
 
+# Retain the additional measurements carried through base_data.
+secondary_vars <- setdiff(
+  names(base_data),
+  c("shrid2", "district_name", "subdistrict_name", "tot_p", "tot_f",
+    "wave", "D", "Ycons", "Ylowinc", "Ymidinc", "clusters")
+)
+
 # -----------------------------------------------------------------------------
 # 2. Merge and Compute Spillover Indicators
 #
@@ -59,6 +66,7 @@ smartcard_data <- base_data %>%
   inner_join(satellite_features, by = "shrid2") %>%
   select(shrid2, spillover_20km, tot_p, tot_f,
          wave, D, Ycons, Ylowinc, Ymidinc, clusters,
+         all_of(secondary_vars),
          starts_with("luminosity_"), starts_with("satellite_"))
 
 # Strip residual Stata attributes introduced by haven

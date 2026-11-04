@@ -20,6 +20,70 @@ suppressPackageStartupMessages({
   library(haven)
 })
 
+# Additional measurement sources and original columns to retain (issue #6).
+# Each selection includes shrid2. The SECC rural selection also includes
+# the existing population and primary-outcome inputs.
+secondary_source_urls <- c(
+  secc_rural_shrid = "https://dataverse.harvard.edu/api/access/datafile/10742876",
+  ec13_shrid = "https://dataverse.harvard.edu/api/access/datafile/10742666",
+  pc11_pca_clean_shrid = "https://dataverse.harvard.edu/api/access/datafile/10742704",
+  secc_cons_rural_shrid = "https://dataverse.harvard.edu/api/access/datafile/10742743",
+  pc11_vd_clean_shrid = "https://dataverse.harvard.edu/api/access/datafile/10742721",
+  antyodaya_shrid = "https://dataverse.harvard.edu/api/access/datafile/10742626"
+)
+
+secondary_source_vars <- list(
+  secc_rural_shrid = c(
+    "shrid2", "tot_p", "tot_f", "inc_5k_plus_share", "inc_10k_plus_share",
+    "ent_own_share",
+    "salary_any_share",
+    "salary_priv_share",
+    "inc_source_manlab_share",
+    "inc_source_cultiv_share",
+    "inc_source_enterpr_share",
+    "house_type1", "house_type2", "house_type3",
+    "house_own1", "house_own2", "house_own3",
+    "house_tax0", "house_tax1",
+    "kisan_cc",
+    "mech_farm_equip_share",
+    "irr_equip_share",
+    "ag_equip_share",
+    "veh_two_three_share", "veh_four_share",
+    "land_own_share",
+    "irr_share1",
+    "ed_prim_share",
+    "ed_sec_share",
+    "sc_share", "st_share", "disab_share",
+    "num_room_mean",
+    "roof_mat_solid_share",
+    "wall_mat_solid_share"
+  ),
+  ec13_shrid = c(
+    "shrid2",
+    "ec13_emp_all", "ec13_emp_f", "ec13_emp_hired",
+    "ec13_count_all", "ec13_emp_manuf", "ec13_emp_services"
+  ),
+  pc11_pca_clean_shrid = c(
+    "shrid2",
+    "pc11_pca_tot_work_p", "pc11_pca_tot_p",
+    "pc11_pca_p_lit", "pc11_pca_p_06"
+  ),
+  secc_cons_rural_shrid = c(
+    "shrid2", "secc_pov_rate_rural"
+  ),
+  pc11_vd_clean_shrid = c(
+    "shrid2", "pc11_vd_comm_bank"
+  ),
+  antyodaya_shrid = c(
+    "shrid2",
+    "total_hhd_engaged_in_non_farm_ac",
+    "total_hhd_mobilized_into_shg",
+    "total_hhd_availing_pmjdy_bank_ac",
+    "total_hhd_having_piped_water_con",
+    "total_hhd"
+  )
+)
+
 # -----------------------------------------------------------------------------
 # 1. Load Muralidharan et al. Study Data
 #
@@ -74,26 +138,67 @@ shrug_loc <- read.table(
   select(-state_name)
 
 # -----------------------------------------------------------------------------
-# 3. Load SECC Welfare Data
+# 3. Load Welfare and Additional Measurements
 #
-# Two separate files: per-capita rural consumption, and household income-share
-# at two thresholds (5k and 10k rupees/year). tot_f is zeroed when tot_p == 0
-# to avoid division issues downstream.
+# Retain the requested source columns without transforming them. The existing
+# temporary outcome inputs and tot_f convention are preserved. New Stata
+# imports request the original file format to retain source labels.
 # -----------------------------------------------------------------------------
 
 secc_cons <- read.table(
-  "https://dataverse.harvard.edu/api/access/datafile/10742743",
+  secondary_source_urls[["secc_cons_rural_shrid"]],
   sep = "\t", header = TRUE
 ) %>%
-  select(shrid2, Ycons_raw = secc_cons_pc_rural)
+  select(
+    all_of(secondary_source_vars[["secc_cons_rural_shrid"]]),
+    Ycons_raw = secc_cons_pc_rural
+  )
 
 secc_income <- read_dta(
-  "https://dataverse.harvard.edu/api/access/datafile/10742876",
-  col_select = c(shrid2, tot_p, tot_f, inc_5k_plus_share, inc_10k_plus_share)
+  secondary_source_urls[["secc_rural_shrid"]],
+  col_select = all_of(secondary_source_vars[["secc_rural_shrid"]])
 ) %>%
   rename(Ylowinc_raw = inc_5k_plus_share,
          Ymidinc_raw = inc_10k_plus_share) %>%
   mutate(tot_f = if_else(tot_p == 0, 0, tot_f))
+
+ec13 <- read_dta(
+  paste0(secondary_source_urls[["ec13_shrid"]], "?format=original"),
+  col_select = all_of(secondary_source_vars[["ec13_shrid"]])
+)
+
+pc11_pca <- read_dta(
+  paste0(secondary_source_urls[["pc11_pca_clean_shrid"]], "?format=original"),
+  col_select = all_of(secondary_source_vars[["pc11_pca_clean_shrid"]])
+)
+
+pc11_vd <- read_dta(
+  paste0(secondary_source_urls[["pc11_vd_clean_shrid"]], "?format=original"),
+  col_select = all_of(secondary_source_vars[["pc11_vd_clean_shrid"]])
+)
+
+antyodaya <- read_dta(
+  paste0(secondary_source_urls[["antyodaya_shrid"]], "?format=original"),
+  col_select = all_of(secondary_source_vars[["antyodaya_shrid"]])
+)
+
+# Each source must contribute at most one row per village.
+measurement_tables <- list(
+  secc_rural_shrid = secc_income,
+  secc_cons_rural_shrid = secc_cons,
+  ec13_shrid = ec13,
+  pc11_pca_clean_shrid = pc11_pca,
+  pc11_vd_clean_shrid = pc11_vd,
+  antyodaya_shrid = antyodaya
+)
+
+for (source_name in names(measurement_tables)) {
+  source_key <- measurement_tables[[source_name]]$shrid2
+  if (anyNA(source_key) || any(source_key == "") || anyDuplicated(source_key) > 0L) {
+    stop(sprintf("Expected unique, nonmissing shrid2 values in %s.", source_name),
+         call. = FALSE)
+  }
+}
 
 secc <- full_join(secc_cons, secc_income, by = "shrid2")
 
@@ -116,6 +221,13 @@ base_data <- shrug_loc %>%
     Ymidinc = as.integer(Ymidinc_raw == 0)
   ) %>%
   select(-ends_with("_raw"))
+
+# Add measurements without restricting the established analysis sample.
+base_data <- base_data %>%
+  left_join(ec13, by = "shrid2") %>%
+  left_join(pc11_pca, by = "shrid2") %>%
+  left_join(pc11_vd, by = "shrid2") %>%
+  left_join(antyodaya, by = "shrid2")
 
 cat(sprintf("Base data: %d villages\n", nrow(base_data)))
 cat(sprintf("  Experimental: %d  |  Observational: %d\n",
