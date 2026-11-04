@@ -53,7 +53,7 @@ Reanalyzes the effect of Smartcards (biometric payments infrastructure) on villa
 
 **Data:** Muralidharan et al. (2016) replication package + SHRUG shapefiles (see above).
 
-Download the replication package from [openICPSR](https://www.openicpsr.org/openicpsr/project/113012/version/V1/view) and extract it so the study data file is located at `data/raw/113012-V1/20141346_data/data/balance-for-ap-mandal-comparison.dta`.
+Download the replication package from [openICPSR](https://www.openicpsr.org/openicpsr/project/113012/version/V1/view) and extract it so the study data file is located at `data/raw/smartcards/113012-V1/20141346_data/data/balance-for-ap-mandal-comparison.dta`.
 
 ```r
 source("code/smartcards/00_run_all.R")
