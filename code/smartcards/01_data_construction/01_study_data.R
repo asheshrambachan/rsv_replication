@@ -58,7 +58,8 @@ study_data <- read_dta(
 
 district_name_map    <- c("sri potti sriramulu nellore" = "nellore",
                           "ysr kadapa"                  = "kadapa")
-subdistrict_name_map <- c("sirpur town" = "sirpur t")
+subdistrict_name_map <- c("sirpur town" = "sirpur t", 
+                          "khammam" = "khammam urban")
 
 shrug_loc <- read.table(
   "https://dataverse.harvard.edu/api/access/datafile/10742739",
