@@ -36,7 +36,7 @@ sample_smartcard_levels <- c(
 )
 
 study_data <- read_dta(
-  "data/raw/smartcards/muralidharanetal_replication_package/balance-for-ap-mandal-comparison.dta",
+  "data/raw/113012-V1/20141346_data/data/balance-for-ap-mandal-comparison.dta",
   col_select = c(uniqueM, district_name, subdistrict_name, wave)
 ) %>%
   rename(clusters = ) %>%
