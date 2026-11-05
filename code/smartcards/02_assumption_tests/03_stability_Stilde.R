@@ -14,8 +14,8 @@ suppressPackageStartupMessages({
 #   Stilde=o: Buffer Mandals (2011), Non-Study Mandals (observational)
 #
 # Buffer Mandals (2011) appear in both Stilde=e and Stilde=o (overlap units).
-# This is implemented via separate_rows() on the "e,o" label assigned to the
-# Experimental: Untreated (2011) wave.
+# Each village remains one record with two sample-role indicators. Both
+# contributions use the same mandal multiplier in each bootstrap draw.
 #
 # Compares the conditional distribution of R_PC1 between the experimental and
 # observational samples among untreated units (D=0), separately for each
@@ -23,9 +23,11 @@ suppressPackageStartupMessages({
 #
 #   H0: F(R_PC1 | Stilde=e, D=0, Y=y) = F(R_PC1 | Stilde=o, D=0, Y=y)
 #
-# Failure to reject supports stability: the sensing mechanism f(R | D, Y) is
-# the same across the experimental and observational samples, so the R-Y
-# relationship learned in one sample can be transported to the other.
+# The KS distance is unchanged; ks_pval now uses a mandal-level multiplier
+# bootstrap (B=2000), accounting for clustering and sample overlap.
+# Inference is asymptotic and requires independent mandals, no dominating
+# cluster, and adequate support. Failure to reject does not establish
+# stability. This diagnostic concerns PC1, not all R.
 #
 # See 02_stability_S.R for the analogous test using the non-overlapping
 # definition S, where Buffer Mandals (2011) appear only in S=e.
@@ -33,49 +35,23 @@ suppressPackageStartupMessages({
 # Output: data/clean/smartcards/assumption_stability_Stilde.csv
 # ==============================================================================
 
-## Load required columns from the cleaned dataset
-data <- read_csv("data/clean/smartcards/data.csv",
-                 col_select = c(wave, D, R_PC1_scaled, Ycons, Ylowinc, Ymidinc)) %>%
-  mutate(
-    S = case_when(
-      wave == "Experimental: Treated (2010)"   ~ "e",
-      wave == "Experimental: Untreated (2011)" ~ "e,o",
-      wave == "Experimental: Untreated (2012)" ~ "e",
-      wave == "Observational (N/A)"            ~ "o"
-    )
-  ) %>%
-  separate_rows(S, sep = ",") %>%
-  select(D, S, R_PC1_scaled, Ycons, Ylowinc, Ymidinc)
-
-## Filter to D = 0
-data_d0 <- data %>% filter(D == 0)
+source("code/utils/stability_clustered.R")
 
 # ------------------------------------------------------------------------------
 # Run KS tests
 # ------------------------------------------------------------------------------
 Y_vars   <- c("Ycons", "Ylowinc", "Ymidinc")
-y_levels <- c(0, 1)
+B        <- 2000L
+# Continue after S's six tests to preserve the previous combined-run seeds.
+seed     <- 42L + 2L * length(Y_vars)
 
-ks_list <- list()
-for (Y_var in Y_vars) {
-  for (y_val in y_levels) {
-    r_exp <- data_d0 %>% filter(S == "e", !!sym(Y_var) == y_val) %>% pull(R_PC1_scaled)
-    r_obs <- data_d0 %>% filter(S == "o", !!sym(Y_var) == y_val) %>% pull(R_PC1_scaled)
-    
-    ks <- ks.test(r_exp, r_obs)
-    
-    ks_list[[paste0(Y_var, "_", y_val)]] <- data.frame(
-      outcome = Y_var,
-      Y       = y_val,
-      ks_stat = unname(ks$statistic),
-      ks_pval = ks$p.value,
-      n_exp   = length(r_exp),
-      n_obs   = length(r_obs)
-    )
-  }
-}
-
-ks_results <- do.call(rbind, ks_list)
+cluster_results <- run_stability_clustered(
+  Y_vars = Y_vars, sample_definitions = "Stilde", B = B, seed = seed
+)
+# Preserve the original six-column schema for downstream table scripts.
+# Full cluster counts, missingness and statuses remain in cluster_results.
+ks_results <- cluster_results[c("outcome", "Y", "ks_stat", "cluster_pval", "n_exp", "n_obs")]
+names(ks_results)[names(ks_results) == "cluster_pval"] <- "ks_pval"
 print(ks_results)
 
 # ------------------------------------------------------------------------------
