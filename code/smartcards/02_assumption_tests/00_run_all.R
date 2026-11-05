@@ -2,6 +2,7 @@
 # Smartcard -- Assumption Tests: Run All
 #
 # Runs KS tests that check the two key assumptions underlying RSV:
+# Stability tests 02 and 03 use mandal-clustered multiplier-bootstrap p-values.
 #   01 -- No direct effect (Assumption 3(ii)): D ⊥ R | Stilde=e, Y.
 #         Compares F(R_PC1 | Stilde=e, D=0, Y=y) vs F(R_PC1 | Stilde=e, D=1, Y=y).
 #   02 -- Stability, S definition (Assumption 2(i)): R ⊥ S | D=0, Y.
