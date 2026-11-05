@@ -6,6 +6,7 @@ font <- "Times"
 palette <- list(
   darkblue   = "#43739D",
   blue       = "#8DB1CE",
+  teal       = "#7CE2C6",
   darkgreen  = "#618564",
   green      = "#B4C992",
   lightgreen = "#D4E1C4",
