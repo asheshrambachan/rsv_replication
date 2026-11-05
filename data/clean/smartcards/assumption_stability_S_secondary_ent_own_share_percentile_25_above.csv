@@ -1,0 +1,13 @@
+"sample_definition","outcome","Y","secondary","secondary_value","secondary_method","secondary_cutoff","secondary_percentile","secondary_direction","secondary_reference_n","secondary_n_at_cutoff","ks_stat","cluster_pval","n_exp","n_obs","n_overlap","clusters_exp","clusters_obs","max_cluster_share","status","small_cluster_warning","cluster_warning_threshold","n_candidates_y","n_missing_secondary_y","n_missing_R_y","n_missing_primary_eligible","B","seed"
+"S","Ycons",0,"ent_own_share",0,"percentile",0,25,"above",8312,2682,0.0476922069183177,0.802598700649675,794,423,0,157,90,0.0205423171733772,"ok",FALSE,10,4401,0,0,0,2000,42
+"S","Ycons",0,"ent_own_share",1,"percentile",0,25,"above",8312,2682,0.0512887716603786,0.406296851574213,1964,1220,0,179,105,0.00816582914572864,"ok",FALSE,10,4401,0,0,0,2000,43
+"S","Ycons",1,"ent_own_share",0,"percentile",0,25,"above",8312,2682,0.11998881223196,0.211894052973513,519,248,0,89,52,0.106910039113429,"ok",FALSE,10,1637,0,0,0,2000,44
+"S","Ycons",1,"ent_own_share",1,"percentile",0,25,"above",8312,2682,0.0959862086911267,0.312343828085957,504,366,0,95,62,0.028735632183908,"ok",FALSE,10,1637,0,0,0,2000,45
+"S","Ylowinc",0,"ent_own_share",0,"percentile",0,25,"above",8312,2682,0.0541563275434243,0.645177411294353,1085,520,0,159,94,0.0274143302180685,"ok",FALSE,10,5536,0,0,0,2000,46
+"S","Ylowinc",0,"ent_own_share",1,"percentile",0,25,"above",8312,2682,0.0270481783055732,0.851074462768616,2411,1520,0,180,105,0.00992113965911982,"ok",FALSE,10,5536,0,0,0,2000,47
+"S","Ylowinc",1,"ent_own_share",0,"percentile",0,25,"above",8312,2682,0.128964796096201,0.382808595702149,228,151,0,68,49,0.100263852242744,"ok",FALSE,10,502,0,0,0,2000,48
+"S","Ylowinc",1,"ent_own_share",1,"percentile",0,25,"above",8312,2682,0.114832535885168,0.770114942528736,57,66,0,38,28,0.0894308943089431,"ok",FALSE,10,502,0,0,0,2000,49
+"S","Ymidinc",0,"ent_own_share",0,"percentile",0,25,"above",8312,2682,0.0558740209965006,0.733633183408296,680,353,0,149,92,0.0174249757986447,"ok",FALSE,10,4519,0,0,0,2000,50
+"S","Ymidinc",0,"ent_own_share",1,"percentile",0,25,"above",8312,2682,0.0277663206237503,0.860569715142429,2161,1325,0,180,105,0.00774526678141136,"ok",FALSE,10,4519,0,0,0,2000,51
+"S","Ymidinc",1,"ent_own_share",0,"percentile",0,25,"above",8312,2682,0.0748606515842499,0.586206896551724,633,318,0,131,76,0.0683491062039958,"ok",FALSE,10,1519,0,0,0,2000,52
+"S","Ymidinc",1,"ent_own_share",1,"percentile",0,25,"above",8312,2682,0.057408863429306,0.861569215392304,307,261,0,109,70,0.0316901408450704,"ok",FALSE,10,1519,0,0,0,2000,53

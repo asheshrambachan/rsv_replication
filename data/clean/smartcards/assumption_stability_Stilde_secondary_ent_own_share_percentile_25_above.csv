@@ -1,0 +1,13 @@
+"sample_definition","outcome","Y","secondary","secondary_value","secondary_method","secondary_cutoff","secondary_percentile","secondary_direction","secondary_reference_n","secondary_n_at_cutoff","ks_stat","cluster_pval","n_exp","n_obs","n_overlap","clusters_exp","clusters_obs","max_cluster_share","status","small_cluster_warning","cluster_warning_threshold","n_candidates_y","n_missing_secondary_y","n_missing_R_y","n_missing_primary_eligible","B","seed"
+"Stilde","Ycons",0,"ent_own_share",0,"percentile",0,25,"above",8312,2682,0.025191364779089,0.656671664167916,794,1029,606,157,208,0.0205423171733772,"ok",FALSE,10,4401,0,0,0,2000,54
+"Stilde","Ycons",0,"ent_own_share",1,"percentile",0,25,"above",8312,2682,0.0126337976595056,0.916541729135432,1964,2692,1472,179,241,0.00816582914572864,"ok",FALSE,10,4401,0,0,0,2000,55
+"Stilde","Ycons",1,"ent_own_share",0,"percentile",0,25,"above",8312,2682,0.0559331898134807,0.0689655172413793,519,682,434,89,121,0.106910039113429,"ok",FALSE,10,1637,0,0,0,2000,56
+"Stilde","Ycons",1,"ent_own_share",1,"percentile",0,25,"above",8312,2682,0.0421683999270206,0.4007996001999,504,783,417,95,134,0.028735632183908,"ok",FALSE,10,1637,0,0,0,2000,57
+"Stilde","Ylowinc",0,"ent_own_share",0,"percentile",0,25,"above",8312,2682,0.0377643861514829,0.213893053473263,1085,1365,845,159,214,0.0274143302180685,"ok",FALSE,10,5536,0,0,0,2000,58
+"Stilde","Ylowinc",0,"ent_own_share",1,"percentile",0,25,"above",8312,2682,0.00910140440490503,0.982008995502249,2411,3362,1842,180,241,0.00992113965911982,"ok",FALSE,10,5536,0,0,0,2000,59
+"Stilde","Ylowinc",1,"ent_own_share",0,"percentile",0,25,"above",8312,2682,0.0523273501673258,0.380309845077461,228,346,195,68,103,0.100263852242744,"ok",FALSE,10,502,0,0,0,2000,60
+"Stilde","Ylowinc",1,"ent_own_share",1,"percentile",0,25,"above",8312,2682,0.0603943487036175,0.906546726636682,57,113,47,38,59,0.0894308943089431,"ok",FALSE,10,502,0,0,0,2000,61
+"Stilde","Ymidinc",0,"ent_own_share",0,"percentile",0,25,"above",8312,2682,0.0453077184631079,0.254872563718141,680,865,512,149,206,0.0174249757986447,"ok",FALSE,10,4519,0,0,0,2000,62
+"Stilde","Ymidinc",0,"ent_own_share",1,"percentile",0,25,"above",8312,2682,0.0112039962569323,0.935532233883059,2161,2974,1649,180,241,0.00774526678141136,"ok",FALSE,10,4519,0,0,0,2000,63
+"Stilde","Ymidinc",1,"ent_own_share",0,"percentile",0,25,"above",8312,2682,0.0289738160061846,0.563218390804598,633,846,528,131,178,0.0683491062039958,"ok",FALSE,10,1519,0,0,0,2000,64
+"Stilde","Ymidinc",1,"ent_own_share",1,"percentile",0,25,"above",8312,2682,0.0227297847302138,0.991004497751124,307,501,240,109,157,0.0316901408450704,"ok",FALSE,10,1519,0,0,0,2000,65

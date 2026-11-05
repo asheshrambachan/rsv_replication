@@ -1,0 +1,31 @@
+\begin{threeparttable}
+\begin{tabular}{lrrrr}
+\toprule
+Outcome & $n_1$ & $n_2$ & KS & $p$-value \\
+\midrule
+\multicolumn{5}{l}{$D=0,\,Y=0,\,\widetilde{Y}=0$}\\
+\quad Consumption & $794$ & $423$ & $0.048$ & $0.803$ \\
+\quad Low income & $1085$ & $520$ & $0.054$ & $0.645$ \\
+\quad Middle income & $680$ & $353$ & $0.056$ & $0.734$ \\
+\addlinespace[0.6em]
+\multicolumn{5}{l}{$D=0,\,Y=0,\,\widetilde{Y}=1$}\\
+\quad Consumption & $1964$ & $1220$ & $0.051$ & $0.406$ \\
+\quad Low income & $2411$ & $1520$ & $0.027$ & $0.851$ \\
+\quad Middle income & $2161$ & $1325$ & $0.028$ & $0.861$ \\
+\addlinespace[0.6em]
+\multicolumn{5}{l}{$D=0,\,Y=1,\,\widetilde{Y}=0$}\\
+\quad Consumption & $519$ & $248$ & $0.120$ & $0.212$ \\
+\quad Low income & $228$ & $151$ & $0.129$ & $0.383$ \\
+\quad Middle income & $633$ & $318$ & $0.075$ & $0.586$ \\
+\addlinespace[0.6em]
+\multicolumn{5}{l}{$D=0,\,Y=1,\,\widetilde{Y}=1$}\\
+\quad Consumption & $504$ & $366$ & $0.096$ & $0.312$ \\
+\quad Low income & $57$ & $66$ & $0.115$ & $0.770$ \\
+\quad Middle income & $307$ & $261$ & $0.057$ & $0.862$ \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[flushleft]
+\small
+\item Notes: Each row compares the distribution of $R_{\mathrm{PC1}}$ between experimental ($S=e$) and observational ($S=o$) units, conditional on $D=0$, $Y$, and $\widetilde{Y}$. $n_1$ and $n_2$ are the corresponding sample sizes. The $p$-values use a centered mandal-level multiplier bootstrap with $B=2000$; the secondary-outcome cutoff is held fixed. Buffer villages contribute only to the experimental role. $\widetilde{Y}=1$ when \texttt{ent\_own\_share} $>$ 0, and zero otherwise. The cutoff is fixed in the original units. Unavailable statistics or $p$-values are shown as --. Failure to reject does not establish stability.
+\end{tablenotes}
+\end{threeparttable}
