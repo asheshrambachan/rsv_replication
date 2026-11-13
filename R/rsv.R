@@ -26,6 +26,11 @@
 #' @param seed Random seed for reproducibility (default \code{NULL}).
 #' @param num.threads Number of threads for parallel processing in random forest
 #'   (default 1).
+#' @param sigma2.method Variance method: \code{"plugin"} (the existing formula,
+#'   default) or \code{"regression"} (regression of the observed full squared
+#'   residual on X and R, using a unit-weight preliminary estimate).
+#' @param sigma2_model RF specification for the numeric variance regression.
+#'   Defaults to the Y specification, with classification weights removed.
 #'
 #' @return An object of class \code{"rsv"} containing:
 #' \describe{
@@ -60,6 +65,10 @@
 #' }
 #'
 #' Standard errors can be added using \code{\link{add_se}}.
+#' With \code{sigma2.method="regression"}, the score bootstrap keeps raw
+#' variance predictions fixed. Full-sample quantile floors are recomputed in
+#' each draw; independent-training floors in split/CV fits remain fixed.
+#' Variance settings and preliminary effects are stored in \code{variance}.
 #'
 #' @seealso \code{\link{rsv_split}}, \code{\link{cv.rsv}}, \code{\link{rsv_fitted}},
 #'   \code{\link{add_se}}
@@ -99,7 +108,8 @@ rsv <- function(Y, D, S_e, S_o, R,
                 sigma2.lower = NULL,
                 sigma2.quantile = 0.01,
                 seed = NULL,
-                num.threads = 1) {
+                num.threads = 1,
+                sigma2.method = c("plugin", "regression"), sigma2_model = NULL) {
 
   # Store call
   cl <- match.call()
@@ -119,6 +129,8 @@ rsv <- function(Y, D, S_e, S_o, R,
   # Resolve model specifications
   model_specs <- resolve_models(models)
   validate_models(model_specs)
+  sigma2.method <- match.arg(sigma2.method)
+  sigma2_model <- .resolve_variance_model(sigma2.method, sigma2_model, model_specs)
 
   # Fit models on full data, predict on full data (resubstitution)
   fit_result <- fit_all_models(
@@ -135,8 +147,14 @@ rsv <- function(Y, D, S_e, S_o, R,
     yK = yK,
     models = model_specs,
     seed = seed,
-    num.threads = num.threads
+    num.threads = num.threads,
+    keep_fits = sigma2.method == "regression"
   )
+  if (sigma2.method == "regression") {
+    fit_result <- .add_regression_variance(fit_result, R, R, X, X,
+      y_levels, yK, sigma2_model, sigma2.quantile, sigma2.lower,
+      seed, num.threads, fixed_floor = FALSE)
+  }
 
   # Get theta_init
   theta_init_val <- fit_result$theta_init
@@ -190,7 +208,10 @@ rsv <- function(Y, D, S_e, S_o, R,
     y_levels = y_levels,
     yK = yK,
     sigma2.lower = sigma2.lower,
-    sigma2.quantile = sigma2.quantile
+    sigma2.quantile = sigma2.quantile,
+    sigma2.method = sigma2.method,
+    sigma2_model = sigma2_model,
+    variance = fit_result$variance
   )
 
   class(result) <- "rsv"

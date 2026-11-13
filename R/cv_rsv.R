@@ -45,6 +45,10 @@
 #'
 #' Standard errors can be added using \code{\link{add_se}}, which will
 #' bootstrap the entire cross-fitting procedure.
+#' With variance regression, each fold's preliminary effect, residual regression
+#' and floor use training records only. Use \code{method="score_bootstrap"} for
+#' fixed predictions or \code{method="bootstrap"} to refit models in each draw.
+#' Analytical influence SEs currently do not support learned variance predictions.
 #'
 #' @seealso \code{\link{rsv}}, \code{\link{rsv_split}}, \code{\link{rsv_fitted}},
 #'   \code{\link{add_se}}
@@ -93,7 +97,8 @@ cv.rsv <- function(Y, D, S_e, S_o, R,
                    sigma2.lower = NULL,
                    sigma2.quantile = 0.01,
                    seed = NULL,
-                   num.threads = 1) {
+                   num.threads = 1,
+                   sigma2.method = c("plugin", "regression"), sigma2_model = NULL) {
 
   # Store call
   cl <- match.call()
@@ -117,6 +122,8 @@ cv.rsv <- function(Y, D, S_e, S_o, R,
   # Resolve model specifications
   model_specs <- resolve_models(models)
   validate_models(model_specs)
+  sigma2.method <- match.arg(sigma2.method)
+  sigma2_model <- .resolve_variance_model(sigma2.method, sigma2_model, model_specs)
 
   # Create folds (cluster-level if clusters provided)
   fold_ids <- make_folds(n, nfolds, seed, clusters)
@@ -124,6 +131,7 @@ cv.rsv <- function(Y, D, S_e, S_o, R,
   # Storage for pooled cross-fitted predictions
   pooled_preds_list   <- vector("list", nfolds)
   pooled_test_indices <- vector("list", nfolds)
+  variance_info <- if (sigma2.method == "regression") vector("list", nfolds) else NULL
 
   # Loop over folds: fit models on training folds, predict on test fold
   for (k in seq_len(nfolds)) {
@@ -144,8 +152,17 @@ cv.rsv <- function(Y, D, S_e, S_o, R,
       yK = yK,
       models = model_specs,
       seed = seed,
-      num.threads = num.threads
+      num.threads = num.threads,
+      keep_fits = sigma2.method == "regression"
     )
+    if (sigma2.method == "regression") {
+      fit_result <- .add_regression_variance(fit_result,
+        R[train_idx, , drop = FALSE], R[test_idx, , drop = FALSE],
+        if (!is.null(X)) X[train_idx, , drop = FALSE] else NULL,
+        if (!is.null(X)) X[test_idx, , drop = FALSE] else NULL,
+        y_levels, yK, sigma2_model, sigma2.quantile, sigma2.lower, seed, num.threads)
+      variance_info[[k]] <- fit_result$variance
+    }
 
     pooled_preds_list[[k]]   <- fit_result$predictions
     pooled_test_indices[[k]] <- which(test_idx)
@@ -223,7 +240,10 @@ cv.rsv <- function(Y, D, S_e, S_o, R,
     fold_ids = fold_ids,
     pooled_predictions = pooled_predictions,
     sigma2.lower = sigma2.lower,
-    sigma2.quantile = sigma2.quantile
+    sigma2.quantile = sigma2.quantile,
+    sigma2.method = sigma2.method,
+    sigma2_model = sigma2_model,
+    variance = variance_info
   )
 
   class(result) <- "cv.rsv"

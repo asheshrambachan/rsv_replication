@@ -140,6 +140,44 @@ compute_counts <- function(df, y_levels, X_cols = character(0)) {
 }
 
 
+#' Validate an explicitly supplied normalization table
+#' @keywords internal
+.validate_delta_counts <- function(counts, df, y_levels, X_cols) {
+  probability_cols <- c("count_D1_Se", "count_D0_Se", paste0("count_Y", y_levels, "_So"))
+  required <- c(X_cols, probability_cols)
+  if (!is.data.frame(counts) || !nrow(counts) || anyDuplicated(names(counts))) {
+    stop("counts must be a nonempty data frame with unique column names.")
+  }
+  if (!all(required %in% names(counts))) {
+    stop("counts is missing columns: ", paste(setdiff(required, names(counts)), collapse = ", "))
+  }
+  valid <- vapply(counts[probability_cols], function(x) {
+    is.numeric(x) && all(is.finite(x)) && all(x > 0 & x <= 1)
+  }, logical(1))
+  if (!all(valid)) stop("Supplied count probabilities must be finite and in (0, 1].")
+  # Membership roles may overlap: only check each role's total separately.
+  tolerance <- 64 * .Machine$double.eps
+  if (any(rowSums(counts[c("count_D1_Se", "count_D0_Se")]) > 1 + tolerance) ||
+      any(rowSums(counts[paste0("count_Y", y_levels, "_So")]) > 1 + tolerance)) {
+    stop("Supplied count probabilities must sum to at most one within each sample role.")
+  }
+  if (any(probability_cols %in% names(df))) {
+    stop("df already contains normalization columns; supply them only through counts.")
+  }
+  if (!length(X_cols)) {
+    if (nrow(counts) != 1L) stop("counts must have exactly one row when X_cols is empty.")
+  } else {
+    if (!all(X_cols %in% names(df))) stop("Some X_cols are absent from df.")
+    if (anyNA(counts[X_cols]) || anyNA(df[X_cols]) || anyDuplicated(counts[X_cols])) {
+      stop("counts must have unique, nonmissing X-stratum keys, and df must have nonmissing keys.")
+    }
+    absent <- dplyr::anti_join(unique(df[X_cols]), counts[X_cols], by = X_cols)
+    if (nrow(absent)) stop("Supplied counts do not cover all X strata in df.")
+  }
+  counts[required]
+}
+
+
 #' Compute delta functions for RSV estimation
 #'
 #' Computes delta_e (experimental delta) and delta_o (observational deltas)
@@ -150,6 +188,9 @@ compute_counts <- function(df, y_levels, X_cols = character(0)) {
 #' @param yK Reference category for Y
 #' @param X_cols Character vector of column names for discrete covariates (optional)
 #' @param use_pred Logical; if TRUE, use predictions (pred_*), if FALSE use observations
+#' @param counts Optional normalization table from compute_counts() on a designated
+#'   sample. NULL preserves calculation from df. Supplied probabilities must be
+#'   positive, with one row per X stratum (one row total without X).
 #'
 #' @return Data frame with delta columns:
 #' \describe{
@@ -168,9 +209,14 @@ compute_counts <- function(df, y_levels, X_cols = character(0)) {
 #' For use_pred = FALSE: Uses observed Y, D instead of predictions.
 #'
 #' @keywords internal
-compute_deltas <- function(df, y_levels, yK, X_cols = character(0), use_pred = TRUE) {
+compute_deltas <- function(df, y_levels, yK, X_cols = character(0), use_pred = TRUE,
+                           counts = NULL) {
 
-  count_df <- compute_counts(df, y_levels = y_levels, X_cols = X_cols)
+  count_df <- if (is.null(counts)) {
+    compute_counts(df, y_levels = y_levels, X_cols = X_cols)
+  } else {
+    .validate_delta_counts(counts, df, y_levels, X_cols)
+  }
   
   if (length(X_cols) == 0) {
     merged <- bind_cols(df, count_df)
@@ -396,31 +442,98 @@ compute_sigma2 <- function(
 }
 
 
-#' Compute H matrix (efficient weights)
+#' Compute H from predicted observational contrasts and variance weights
 #'
-#' Computes the H matrix used in efficient weighting for the RSV estimator.
-#' H = delta_o / sigma^2.
+#' Computes H = delta_o / sigma^2 using the existing delta functions. Supplied
+#' sigma2 bypasses variance estimation; sigma2 = 1 initializes unit weights.
+#' Otherwise the existing preliminary-theta variance calculation is retained.
 #'
 #' @param df Data frame with observations and predictions
-#' @param theta_init Data frame with theta estimates
-#' @param sigma2.lower Lower bound for sigma-squared stabilization (optional)
-#' @param sigma2.quantile Quantile for sigma-squared lower bound
+#' @param theta_init Data frame with preliminary theta estimates; optional when
+#'   sigma2 is supplied, or when pred_y_only is TRUE and metadata is explicit.
+#' @param y_levels Outcome levels, including the reference category
+#' @param sigma2.lower Lower bound for estimated sigma-squared; not applied to
+#'   supplied sigma2, which must already be strictly positive.
+#' @param sigma2.quantile Quantile for the estimated sigma-squared lower bound
+#' @param pred_y_only Return the existing simple outcome-probability score
+#' @param sigma2 NULL to estimate variance weights using theta_init, or a finite
+#'   positive numeric scalar/vector (one value per row). Not used with pred_y_only.
+#' @param yK Reference outcome category. Inferred from theta_init when omitted;
+#'   must be explicit when theta_init is NULL.
+#' @param X_cols Covariate column names. Inferred from theta_init when omitted;
+#'   supply character(0) explicitly for no X when theta_init is NULL.
+#' @param counts Optional normalization table from compute_counts(), reused for
+#'   the predicted contrast. Currently requires explicit sigma2 so the existing
+#'   variance estimator cannot silently use a different normalization sample.
+#'
+#' @details Supplied weights are used as given, without clipping or quantile
+#'   flooring. When estimating weights, explicit metadata must agree with
+#'   theta_init. With counts = NULL, normalization frequencies come from df.
+#'   Supplied counts let a representation use fixed frequencies on new records.
+#'
+#' @examples
+#' \dontrun{
+#' H0 <- compute_H(df, y_levels = c(0, 1), yK = 0,
+#'                 X_cols = character(0), sigma2 = 1)
+#' }
 #'
 #' @return Data frame with H columns (one per non-reference Y category)
 #'
 #' @keywords internal
 compute_H <- function(
     df,
-    theta_init,
+    theta_init = NULL,
     y_levels,
     sigma2.lower = NULL,
     sigma2.quantile = 0.01,
-    pred_y_only = FALSE
+    pred_y_only = FALSE,
+    sigma2 = NULL,
+    yK = NULL,
+    X_cols = NULL,
+    counts = NULL
     ) {
 
-  yK <- .get_yK_value(y_levels, theta_init)
+  if (!is.logical(pred_y_only) || length(pred_y_only) != 1L || is.na(pred_y_only)) {
+    stop("pred_y_only must be TRUE or FALSE.")
+  }
+  if (length(y_levels) < 2L || anyNA(y_levels) || anyDuplicated(y_levels) ||
+      (is.numeric(y_levels) && any(!is.finite(y_levels)))) {
+    stop("y_levels must contain at least two distinct, nonmissing outcome levels.")
+  }
+  estimate_sigma2 <- !pred_y_only && is.null(sigma2)
+  if (estimate_sigma2 && !is.null(counts)) {
+    stop("Supplied counts require explicit sigma2; use sigma2 = 1 for unit weights.")
+  }
+  if (estimate_sigma2 && is.null(theta_init)) {
+    stop("theta_init is required when sigma2 is NULL; supply sigma2 = 1 for unit weights.")
+  }
+  if (is.null(yK)) {
+    if (is.null(theta_init)) stop("Supply yK explicitly when theta_init is NULL.")
+    yK <- .get_yK_value(y_levels, theta_init)
+  }
+  if (length(yK) != 1L || anyNA(yK) || !yK %in% y_levels) {
+    stop("yK must be a single reference category in y_levels.")
+  }
+  if (is.null(X_cols)) {
+    if (is.null(theta_init)) {
+      stop("Supply X_cols explicitly when theta_init is NULL; use character(0) for no X.")
+    }
+    X_cols <- names(theta_init)[!startsWith(names(theta_init), "theta_Y")]
+  }
+  if (!is.character(X_cols) || anyNA(X_cols) || anyDuplicated(X_cols) || any(!nzchar(X_cols))) {
+    stop("X_cols must contain unique nonempty column names, or character(0).")
+  }
+  if (estimate_sigma2) {
+    theta_yK <- .get_yK_value(y_levels, theta_init)
+    theta_X <- names(theta_init)[!startsWith(names(theta_init), "theta_Y")]
+    if (length(theta_yK) != 1L || !yK %in% theta_yK || !setequal(X_cols, theta_X)) {
+      stop("yK and X_cols must agree with theta_init when estimating sigma2.")
+    }
+  }
 
   if (pred_y_only) {
+    if (!is.null(sigma2)) stop("sigma2 is not used with pred_y_only = TRUE.")
+    if (!is.null(counts)) stop("counts is not used with pred_y_only = TRUE.")
     yj_levels    <- setdiff(y_levels, yK)
     pred_yj_cols <- paste0("pred_Y", yj_levels)
     pred_yj      <- as.matrix(df[, pred_yj_cols, drop = FALSE])
@@ -429,12 +542,21 @@ compute_H <- function(
     return(out)
   }
 
-  X_cols <- names(theta_init)[!startsWith(names(theta_init), "theta_Y")]
-  delta_o <- compute_deltas(df, y_levels = y_levels, yK = yK, X_cols = X_cols, use_pred = TRUE) %>%
+  if (!all(X_cols %in% names(df))) stop("Some X_cols are absent from df.")
+  if (!is.null(sigma2) &&
+      (!is.numeric(sigma2) || !is.null(dim(sigma2)) ||
+       !length(sigma2) || !length(sigma2) %in% c(1L, nrow(df)) ||
+       anyNA(sigma2) || any(!is.finite(sigma2)) || any(sigma2 <= 0))) {
+    stop("sigma2 must be a finite, strictly positive numeric scalar or vector with one value per row.")
+  }
+  delta_o <- compute_deltas(df, y_levels = y_levels, yK = yK, X_cols = X_cols,
+                            use_pred = TRUE, counts = counts) %>%
     select(starts_with("delta_o_Y"))
 
-  sigma2 <- compute_sigma2(df, theta_init, y_levels = y_levels, sigma2.lower = sigma2.lower,
-                           sigma2.quantile = sigma2.quantile)
+  if (estimate_sigma2) {
+    sigma2 <- compute_sigma2(df, theta_init, y_levels = y_levels, sigma2.lower = sigma2.lower,
+                             sigma2.quantile = sigma2.quantile)
+  }
 
   out <- delta_o / sigma2
   names(out) <- gsub("^delta_o_", "H_", names(out))
@@ -474,12 +596,14 @@ compute_theta <- function(
     sigma2.lower = NULL,
     sigma2.quantile = 0.01,
     pred_y_only = FALSE,
-    weights = NULL
+    weights = NULL,
+    sigma2 = NULL
   ) {
 
   # 1) Compute H (same rows as df)
   H_df <- compute_H(df, theta_init, y_levels = y_levels, sigma2.lower = sigma2.lower,
-                    sigma2.quantile = sigma2.quantile, pred_y_only = pred_y_only)
+                    sigma2.quantile = sigma2.quantile, pred_y_only = pred_y_only,
+                    sigma2 = sigma2)
   
   # 2) Compute deltas (same rows as df)
   yK <- .get_yK_value(y_levels, theta_init)
@@ -605,9 +729,13 @@ compute_theta0 <- function(theta_ate, y_levels, yK) {
 #' combined data frame containing observations and predictions.
 #'
 #' @param df Data frame with Y, D, S_e, S_o, X (optional), and pred_* columns
+#'   A pred_sigma2 column supplies raw variance predictions. An optional
+#'   pred_sigma2_floor column supplies row-aligned training-sample floors.
 #' @param theta_init Initial theta estimate (from compute_theta_init)
 #' @param sigma2.lower Lower bound for sigma-squared stabilization (optional)
 #' @param sigma2.quantile Quantile for sigma-squared lower bound (default 0.01)
+#' @param sigma2 Optional positive variance scalar/vector, overriding the
+#'   plugin formula or stored predictions. Not used for pred_y_only=TRUE.
 #'
 #' @return List with:
 #' \describe{
@@ -632,7 +760,7 @@ compute_theta0 <- function(theta_ate, y_levels, yK) {
 #'
 #' @keywords internal
 compute_estimate <- function(df, theta_init, y_levels, sigma2.lower = NULL, sigma2.quantile = 0.01,
-                            pred_y_only = FALSE, weights = NULL) {
+                            pred_y_only = FALSE, weights = NULL, sigma2 = NULL) {
   # load("~/Documents/remoteoutcome_v2/data/pred_real_Ycons.rda")
   # df <- pred_real_Ycons %>% mutate(pred_Y1 = pred_Y, pred_Y0 = 1-pred_Y, X1 = runif(n())>0.5)
   # theta_init <- compute_theta_init(df, X_cols = c("X1"), yK=0)
@@ -641,6 +769,11 @@ compute_estimate <- function(df, theta_init, y_levels, sigma2.lower = NULL, sigm
   
   # Convert logical to numeric for S_e and S_o
   df <- .ensure_numeric_indicators(df)
+  # Raw variance predictions travel with their observation/prediction records.
+  # Split/CV records also carry a floor learned on their training sample.
+  if (!pred_y_only && is.null(sigma2) && "pred_sigma2" %in% names(df)) {
+    sigma2 <- .variance_from_predictions(df, sigma2.quantile, sigma2.lower)
+  }
 
   # Sample sizes
   n.exp <- sum(df$S_e == 1)
@@ -651,7 +784,7 @@ compute_estimate <- function(df, theta_init, y_levels, sigma2.lower = NULL, sigm
   # Compute final theta
   theta_df <- compute_theta(df, theta_init, y_levels = y_levels, sigma2.lower = sigma2.lower,
                             sigma2.quantile = sigma2.quantile, pred_y_only = pred_y_only,
-                            weights = weights)
+                            weights = weights, sigma2 = sigma2)
   theta <- theta_df$theta
 
   # Average across X strata; optional observation weights (e.g. clustered bootstrap)

@@ -11,6 +11,8 @@
 #' @inheritParams rsv
 #' @param train.proportion Proportion of data to use for training (default 0.5).
 #'   Must be between 0 and 1 (exclusive).
+#' @param theta_init Optional preliminary theta. With variance regression,
+#'   this replaces the training-sample unit-weight preliminary theta.
 #'
 #' @return An object of class \code{"rsv"}. See \code{\link{rsv}} for details.
 #'
@@ -28,6 +30,9 @@
 #' consider \code{\link{cv.rsv}} which uses cross-fitting.
 #'
 #' Standard errors can be added using \code{\link{add_se}}.
+#' Variance regression, when selected, uses only training outcomes, including
+#' the preliminary effect and the quantile floor. Predictions and the training
+#' floor are held fixed in the analysis-sample score bootstrap.
 #'
 #' @seealso \code{\link{rsv}}, \code{\link{cv.rsv}}, \code{\link{rsv_fitted}},
 #'   \code{\link{add_se}}
@@ -72,7 +77,8 @@ rsv_split <- function(Y, D, S_e, S_o, R,
                       sigma2.quantile = 0.01,
                       theta_init = NULL,
                       seed = NULL,
-                      num.threads = 1) {
+                      num.threads = 1,
+                      sigma2.method = c("plugin", "regression"), sigma2_model = NULL) {
 
   # Store call
   cl <- match.call()
@@ -96,6 +102,8 @@ rsv_split <- function(Y, D, S_e, S_o, R,
   # Resolve model specifications
   model_specs <- resolve_models(models)
   validate_models(model_specs)
+  sigma2.method <- match.arg(sigma2.method)
+  sigma2_model <- .resolve_variance_model(sigma2.method, sigma2_model, model_specs)
 
   # Create train/test split (cluster-level if clusters provided)
   split <- make_split(n, train.proportion, seed, clusters)
@@ -117,8 +125,17 @@ rsv_split <- function(Y, D, S_e, S_o, R,
     yK = yK,
     models = model_specs,
     seed = seed,
-    num.threads = num.threads
+    num.threads = num.threads,
+    keep_fits = sigma2.method == "regression"
   )
+  if (sigma2.method == "regression") {
+    fit_result <- .add_regression_variance(fit_result,
+      R[train_idx, , drop = FALSE], R[test_idx, , drop = FALSE],
+      if (!is.null(X)) X[train_idx, , drop = FALSE] else NULL,
+      if (!is.null(X)) X[test_idx, , drop = FALSE] else NULL,
+      y_levels, yK, sigma2_model, sigma2.quantile, sigma2.lower, seed, num.threads,
+      preliminary_theta = theta_init)
+  }
 
   # Get theta_init
   theta_init_val <- theta_init %||% fit_result$theta_init
@@ -180,7 +197,10 @@ rsv_split <- function(Y, D, S_e, S_o, R,
     y_levels = y_levels,
     yK = yK,
     sigma2.lower = sigma2.lower,
-    sigma2.quantile = sigma2.quantile
+    sigma2.quantile = sigma2.quantile,
+    sigma2.method = sigma2.method,
+    sigma2_model = sigma2_model,
+    variance = fit_result$variance
   )
 
   class(result) <- "rsv"

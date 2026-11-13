@@ -14,6 +14,11 @@
 #'   If \code{NULL}, performs individual-level bootstrap.
 #' @param seed Random seed for reproducibility (default \code{NULL}).
 #' @param num.threads Number of threads for parallel bootstrap (default 1).
+#' @param strata Optional bootstrap stratum labels, aligned with the records
+#'   used for estimation (the analysis records for split fits). Default
+#'   \code{NULL} keeps pooled resampling. Each cluster must belong to one
+#'   stratum, with at least two clusters per stratum. Without clusters,
+#'   observations are sampled within strata. Unsupported for \code{influence}.
 #'
 #' @return The input object with added standard error components:
 #' \describe{
@@ -38,6 +43,11 @@
 #'
 #' If \code{clusters} is provided, performs clustered bootstrap by resampling
 #' clusters with replacement.
+#' With \code{strata}, clusters are sampled independently within each stratum,
+#' preserving its number of sampled clusters, not necessarily its village count.
+#' The CV refitting bootstrap additionally preserves the original folds, so
+#' resampling is within fold-stratum combinations; clusters must lie in one fold.
+#' Strata are resampling groups and need not be the covariate cells in \code{X}.
 #'
 #' @seealso \code{\link{rsv}}, \code{\link{rsv_split}}, \code{\link{rsv_fitted}},
 #'   \code{\link{cv.rsv}}
@@ -59,6 +69,9 @@
 #' # With clustered bootstrap
 #' fit <- add_se(fit, B = 1000, clusters = village_id, num.threads = 8)
 #'
+#' # Optional stratification (use only when appropriate for the sampling design)
+#' fit <- add_se(fit, B = 1000, clusters = mandal_id, strata = wave, seed = 42)
+#'
 #' # For cross-fitting (expensive!)
 #' cv_fit <- cv.rsv(Y, D, S_e, S_o, R,
 #'                  models = list(...),
@@ -74,7 +87,8 @@ add_se <- function(object, ...) {
 
 #' @export
 add_se.rsv <- function(object, method = c("score_bootstrap"),
-                       B = 1000, clusters = NULL, seed = NULL, num.threads = 1) {
+                       B = 1000, clusters = NULL, seed = NULL, num.threads = 1,
+                       strata = NULL) {
 
   method <- match.arg(method)
 
@@ -103,6 +117,7 @@ add_se.rsv <- function(object, method = c("score_bootstrap"),
     sigma2.quantile = sigma2.quantile,
     B = B,
     clusters = clusters,
+    strata = strata,
     seed = seed,
     num.threads = num.threads
   )
@@ -123,9 +138,16 @@ add_se.rsv <- function(object, method = c("score_bootstrap"),
 
 #' @export
 add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bootstrap"),
-                          B = 1000, clusters = NULL, seed = NULL, num.threads = 1) {
+                          B = 1000, clusters = NULL, seed = NULL, num.threads = 1,
+                          strata = NULL) {
 
   method <- match.arg(method)
+  if (method == "influence" && !is.null(strata)) {
+    stop("strata is supported only for bootstrap methods; use method = 'score_bootstrap' or 'bootstrap'.")
+  }
+  if (method == "influence" && !is.null(object$pooled_predictions$pred_sigma2)) {
+    stop("Influence SEs are not implemented for supplied/learned variance predictions; use method = 'score_bootstrap' or 'bootstrap'.")
+  }
 
   # Store the add_se call
   se_call <- match.call()
@@ -189,7 +211,7 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
       y_levels = y_levels, yK = yK,
       sigma2.lower = sigma2.lower,
       sigma2.quantile = sigma2.quantile,
-      B = B, clusters = clusters, seed = seed,
+      B = B, clusters = clusters, strata = strata, seed = seed,
       num.threads = num.threads
     )
 
@@ -211,8 +233,10 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
       models = models, nfolds = nfolds, fold_ids = fold_ids,
       sigma2.lower = sigma2.lower,
       sigma2.quantile = sigma2.quantile,
-      B = B, clusters = clusters, seed = seed,
-      num.threads = num.threads
+      B = B, clusters = clusters, strata = strata, seed = seed,
+      num.threads = num.threads,
+      sigma2.method = object$sigma2.method %||% "plugin",
+      sigma2_model = object$sigma2_model
     )
 
     object$se                  <- boot_result$se
@@ -233,6 +257,57 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
 # Internal Bootstrap Functions
 # =============================================================================
 
+# Prepare resampling units once, preserving first-observed cluster order.
+# Explicit strata preserve their cluster counts. Refitting CV also preserves
+# folds, including singleton fold-stratum combinations (which are fixed).
+.bootstrap_resampling_plan <- function(n, clusters = NULL, strata = NULL, fold_ids = NULL) {
+  if (is.null(clusters)) clusters <- seq_len(n)
+  if (!is.atomic(clusters) || !is.null(dim(clusters)) ||
+      length(clusters) != n || anyNA(clusters)) {
+    stop("clusters must be a nonmissing vector aligned with estimation records.")
+  }
+  units <- unique(clusters)
+  unit_index <- match(clusters, units)
+  first <- match(units, clusters)
+  rows <- unname(split(seq_len(n), factor(unit_index, levels = seq_along(units))))
+  stratum_index <- rep(1L, n)
+  if (!is.null(strata)) {
+    if (!is.atomic(strata) || !is.null(dim(strata)) ||
+        length(strata) != n || anyNA(strata)) {
+      stop("strata must be a nonmissing vector aligned with estimation records.")
+    }
+    stratum_index <- match(strata, unique(strata))
+    if (any(stratum_index != stratum_index[first][unit_index])) {
+      stop("Each cluster must belong to one bootstrap stratum.")
+    }
+    if (any(tabulate(stratum_index[first]) < 2L)) {
+      stop("Each bootstrap stratum needs at least two clusters (or observations without clusters).")
+    }
+  }
+  if (is.null(fold_ids)) {
+    folds <- list(seq_along(units))
+  } else {
+    if (length(fold_ids) != n || anyNA(fold_ids)) stop("Invalid bootstrap fold IDs.")
+    if (any(fold_ids != fold_ids[first][unit_index])) {
+      stop("Each cluster must belong to one CV fold; refit cv.rsv() with these clusters.")
+    }
+    folds <- lapply(sort(unique(fold_ids)), function(k) which(fold_ids[first] == k))
+  }
+  groups <- unlist(lapply(folds, function(ids) {
+    if (is.null(strata)) return(list(ids))
+    labels <- stratum_index[first][ids]
+    lapply(unique(labels), function(s) ids[labels == s])
+  }), recursive = FALSE)
+  list(rows = rows, groups = groups)
+}
+
+.draw_bootstrap_rows <- function(plan) {
+  sampled <- unlist(lapply(plan$groups, function(ids) {
+    ids[sample.int(length(ids), length(ids), replace = TRUE)]
+  }), use.names = FALSE)
+  unlist(plan$rows[sampled], use.names = FALSE)
+}
+
 #' Bootstrap RSV estimate from combined data frame
 #'
 #' @param df Data frame with observations (Y, D, S_e, S_o, X) and predictions (pred_*)
@@ -241,6 +316,7 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
 #' @param sigma2.quantile Quantile for sigma-squared lower bound
 #' @param B Number of bootstrap replications
 #' @param clusters Cluster identifiers (optional)
+#' @param strata Bootstrap strata, aligned with estimation records (optional)
 #' @param seed Random seed (optional)
 #' @param num.threads Number of threads for parallel bootstrap
 #'
@@ -249,18 +325,12 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
 #' @keywords internal
 .score_bootstrap_rsv <- function(df, theta_init, y_levels,
                            sigma2.lower, sigma2.quantile,
-                           B, clusters, seed, num.threads) {
+                           B, clusters, seed, num.threads, strata = NULL) {
 
   n <- nrow(df)
   validate_bootstrap_params(B, clusters, n)
 
-  # Setup clusters
-  if (is.null(clusters)) {
-    clusters <- seq_len(n)
-    unique_clusters <- clusters
-  } else {
-    unique_clusters <- unique(clusters)
-  }
+  plan <- .bootstrap_resampling_plan(n, clusters, strata)
 
   # Bootstrap function for one replication
   run_one <- function(b) {
@@ -270,11 +340,8 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
       set.seed(seed + b)
     }
 
-    # Cluster bootstrap: resample clusters with replacement
-    clusters_b <- sample(unique_clusters, length(unique_clusters), replace = TRUE)
-
-    # Create index mapping for resampled data
-    idx_b <- unlist(lapply(clusters_b, function(cl) which(clusters == cl)))
+    # Resample whole clusters, within supplied strata when requested.
+    idx_b <- .draw_bootstrap_rows(plan)
 
     # Resample combined data
     df_b <- df[idx_b, , drop = FALSE]
@@ -338,6 +405,7 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
       B        = B,
       n_failed = n_failed,
       clusters = if (is.null(clusters)) NULL else "provided",
+      strata   = strata,
       seed      = seed,
       tau_draws = boot_coefs
     )
@@ -349,18 +417,19 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
 #'
 #' Fast bootstrap that resamples (obs, prediction) pairs without refitting any
 #' models.  Since predictions are fixed from the original cv.rsv fit, fold
-#' assignments carry no information and all n observations are resampled
-#' together.  No between-fold variance correction is applied.
+#' assignments carry no information. Resampling pools folds, optionally within
+#' supplied bootstrap strata. No between-fold variance correction is applied.
 #'
 #' @keywords internal
 .score_bootstrap_cv_rsv <- function(Y, D, S_e, S_o,
                                     pooled_predictions,
                                     X, X_cols, y_levels, yK,
                                     sigma2.lower, sigma2.quantile,
-                                    B, clusters, seed, num.threads) {
+                                    B, clusters, seed, num.threads, strata = NULL) {
 
   n <- length(Y)
   validate_bootstrap_params(B, clusters, n)
+  plan <- .bootstrap_resampling_plan(n, clusters, strata)
 
   # Build pooled df (obs + fixed predictions)
   df_pooled <- cbind(
@@ -373,25 +442,11 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
   theta_init <- compute_theta_init(df_pooled, y_levels = y_levels,
                                    yK = yK, X_cols = X_cols_use)
 
-  # Setup clusters
-  if (is.null(clusters)) {
-    cluster_ids     <- seq_len(n)
-    unique_clusters <- cluster_ids
-  } else {
-    cluster_ids     <- clusters
-    unique_clusters <- unique(clusters)
-  }
-
-  C      <- length(unique_clusters)
-  cl_idx <- match(cluster_ids, unique_clusters)
-  cl_sizes <- tabulate(cl_idx, nbins = C)
-
   run_one <- function(b) {
     seed_b <- if (!is.null(seed)) seed + b else NA_integer_
     if (!is.na(seed_b)) set.seed(seed_b)
 
-    clusters_b <- sample(unique_clusters, C, replace = TRUE)
-    idx_b      <- unlist(lapply(clusters_b, function(cl) which(cluster_ids == cl)))
+    idx_b      <- .draw_bootstrap_rows(plan)
     df_use     <- df_pooled[idx_b, , drop = FALSE]
     w_use      <- NULL
 
@@ -465,6 +520,7 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
       B              = B,
       n_failed       = n_failed,
       clusters       = if (is.null(clusters)) NULL else "provided",
+      strata         = strata,
       seed           = seed,
       tau_draws      = boot_coefs,
       seed_draws     = boot_seeds,
@@ -479,7 +535,8 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
 #' Bootstrap cross-fitted RSV estimate
 #'
 #' Stratified bootstrap: resamples independently within each fold so that fold
-#' sizes are preserved and train/test leakage is prevented.  Models are refitted
+#' cluster counts are preserved and train/test leakage is prevented. Optional
+#' bootstrap strata are crossed with folds. Models are refitted
 #' on each bootstrap replicate.  After collecting test-fold predictions across
 #' all folds, a single \code{compute_estimate} call is made on the full pooled
 #' bootstrap sample — mirroring the structure of \code{.score_bootstrap_cv_rsv}
@@ -490,39 +547,22 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
                               X, X_cols, y_levels, yK,
                               models, nfolds, fold_ids,
                               sigma2.lower, sigma2.quantile,
-                              B, clusters, seed, num.threads) {
+                              B, clusters, seed, num.threads, strata = NULL,
+                              sigma2.method = "plugin", sigma2_model = NULL) {
 
   n <- length(Y)
   validate_bootstrap_params(B, clusters, n)
+  plan <- .bootstrap_resampling_plan(n, clusters, strata, fold_ids)
 
   X_cols_use <- if (!is.null(X_cols) && length(X_cols) > 0) X_cols else character(0)
-
-  # Setup clusters
-  if (is.null(clusters)) {
-    cluster_ids     <- seq_len(n)
-    unique_clusters <- cluster_ids
-  } else {
-    cluster_ids     <- clusters
-    unique_clusters <- unique(clusters)
-  }
 
   # Bootstrap function for one replication
   run_one <- function(b) {
     if (!is.null(seed)) set.seed(seed + b)
 
-    # Stratified within-fold resampling: resample independently inside each
-    # fold so that every bootstrap sample has exactly the same fold sizes as
-    # the original, preventing train/test leakage.
-    idx_b <- unlist(lapply(seq_len(nfolds), function(k) {
-      fold_k_obs <- which(fold_ids == k)
-      if (is.null(clusters)) {
-        sample(fold_k_obs, length(fold_k_obs), replace = TRUE)
-      } else {
-        cls_in_fold_k <- unique(cluster_ids[fold_k_obs])
-        cls_b_k <- sample(cls_in_fold_k, length(cls_in_fold_k), replace = TRUE)
-        unlist(lapply(cls_b_k, function(cl) which(cluster_ids == cl)))
-      }
-    }))
+    # Keep clusters in their original folds, optionally within supplied strata.
+    # Village counts can vary when resampling clusters of different sizes.
+    idx_b <- .draw_bootstrap_rows(plan)
 
     Y_b        <- Y[idx_b]
     D_b        <- D[idx_b]
@@ -555,8 +595,16 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
           yK = yK,
           models = models,
           seed = NULL,
-          num.threads = 1
+          num.threads = 1,
+          keep_fits = sigma2.method == "regression"
         )
+        if (sigma2.method == "regression") {
+          fit_result <- .add_regression_variance(fit_result,
+            R_b[train_idx, , drop = FALSE], R_b[test_idx, , drop = FALSE],
+            if (!is.null(X_b)) X_b[train_idx, , drop = FALSE] else NULL,
+            if (!is.null(X_b)) X_b[test_idx, , drop = FALSE] else NULL,
+            y_levels, yK, sigma2_model, sigma2.quantile, sigma2.lower, NULL, 1L)
+        }
 
         fold_dfs[[k]] <- cbind(
           data.frame(
@@ -635,6 +683,7 @@ add_se.cv.rsv <- function(object, method = c("influence", "bootstrap", "score_bo
       B          = B,
       n_failed   = n_failed,
       clusters   = if (is.null(clusters)) NULL else "provided",
+      strata     = strata,
       seed       = seed,
       tau_draws  = boot_coefs,
       seed_draws = boot_seeds

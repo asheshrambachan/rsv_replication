@@ -21,6 +21,10 @@
 #' @param pred_D Predicted \eqn{P(D=1 | X, R, S_e=1)}.
 #' @param pred_S_e Predicted \eqn{P(S_e=1 | X, R)}.
 #' @param pred_S_o Predicted \eqn{P(S_o=1 | X, R)}.
+#' @param pred_sigma2 Optional finite nonnegative raw variance predictions,
+#'   aligned with all input records. These bypass the plugin variance formula.
+#'   No regression is fitted here. When theta_init is estimated on a training
+#'   subset, the variance floor is also learned on that subset.
 #' @param theta_init Initial estimate of treatment effect (optional). If \code{NULL},
 #'   will be estimated from a subset of the data.
 #' @param train.proportion Proportion of data to use for estimating \code{theta_init}
@@ -85,7 +89,7 @@ rsv_fitted <- function(Y, D, S_e, S_o,
                        train.proportion = 0.2,
                        sigma2.lower = NULL,
                        sigma2.quantile = 0.01,
-                       seed = NULL) {
+                       seed = NULL, pred_sigma2 = NULL) {
 
   # Store call
   cl <- match.call()
@@ -126,6 +130,11 @@ rsv_fitted <- function(Y, D, S_e, S_o,
   if (length(pred_D) != n) stop("pred_D must have length n")
   if (length(pred_S_e) != n) stop("pred_S_e must have length n")
   if (length(pred_S_o) != n) stop("pred_S_o must have length n")
+  if (!is.null(pred_sigma2) &&
+      (!is.numeric(pred_sigma2) || !is.null(dim(pred_sigma2)) || length(pred_sigma2) != n ||
+       any(!is.finite(pred_sigma2)) || any(pred_sigma2 < 0))) {
+    stop("pred_sigma2 must contain one finite nonnegative variance prediction per input record.")
+  }
 
   # If theta_init not provided, estimate it from a subset
   if (is.null(theta_init)) {
@@ -157,7 +166,7 @@ rsv_fitted <- function(Y, D, S_e, S_o,
       train_df <- cbind(X[train_idx, , drop = FALSE], train_df)
     }
 
-    theta_init_val <- compute_theta_init(train_df, X_cols = X_cols, yK = yK)
+    theta_init_val <- compute_theta_init(train_df, y_levels = y_levels, X_cols = X_cols, yK = yK)
 
     # Use test set for final estimate
     df <- cbind(
@@ -198,6 +207,17 @@ rsv_fitted <- function(Y, D, S_e, S_o,
     }
 
     test_idx <- seq_len(n)
+  }
+
+  variance_info <- NULL
+  if (!is.null(pred_sigma2)) {
+    df$pred_sigma2 <- pred_sigma2[test_idx]
+    floor_sample <- if (is.null(theta_init)) pred_sigma2[train_idx] else pred_sigma2
+    lower <- .variance_prediction_floor(floor_sample, sigma2.quantile, sigma2.lower)
+    if (is.null(theta_init)) df$pred_sigma2_floor <- lower
+    variance_info <- list(method = "provided", raw_predictions = df$pred_sigma2,
+      floor = lower, floored_share = mean(df$pred_sigma2 < lower),
+      floor_source = if (is.null(theta_init)) "training" else "estimation")
   }
 
   # Compute RSV estimate
@@ -247,6 +267,8 @@ rsv_fitted <- function(Y, D, S_e, S_o,
     sigma2.quantile = sigma2.quantile
   )
 
+  result$sigma2.method <- if (is.null(pred_sigma2)) "plugin" else "provided"
+  result$variance <- variance_info
   class(result) <- "rsv"
   return(result)
 }

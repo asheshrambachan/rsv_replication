@@ -16,19 +16,29 @@
 #' @param R_test Test remote sensing variables for predictions
 #' @param X_test Test discrete covariates (optional)
 #' @param X_cols Column names for X covariates
+#' @param y_levels Primary-outcome categories
 #' @param yK Reference category for Y
 #' @param models List of model specifications for Y, D, S_e, S_o
 #' @param seed Random seed
 #' @param num.threads Number of threads for parallel processing
+#' @param keep_fits Return training data with predictions and fitted models
+#'   for reuse without refitting (default FALSE).
 #'
 #' @return List with components:
 #'   \item{predictions}{Data frame with predicted Y (all levels), D, S_e, S_o}
 #'   \item{theta_init}{Initial treatment effect estimate}
+#'   \item{training_data}{When keep_fits=TRUE, training observations, X and
+#'     predictions, with input sample-indicator types preserved}
+#'   \item{fitted_models}{When keep_fits=TRUE, fitted Y, D, S_e and S_o models}
 #'
 #' @keywords internal
 fit_all_models <- function(R_train, X_train = NULL, Y, D, S_e, S_o,
                           R_test, X_test = NULL, X_cols = NULL, y_levels, yK = NULL,
-                          models, seed = NULL, num.threads = 1) {
+                          models, seed = NULL, num.threads = 1, keep_fits = FALSE) {
+  if (!is.logical(keep_fits) || length(keep_fits) != 1L || is.na(keep_fits)) {
+    stop("keep_fits must be TRUE or FALSE.")
+  }
+  if (keep_fits) training_roles <- list(S_e = S_e, S_o = S_o)
   
   if (is.null(y_levels)) {
     yK <- y_levels[1]
@@ -142,12 +152,145 @@ fit_all_models <- function(R_train, X_train = NULL, Y, D, S_e, S_o,
   # Compute theta_init using the new interface
   theta_init <- compute_theta_init(train_df, y_levels = y_levels, yK = yK, X_cols = X_cols)
 
-  list(
+  result <- list(
     predictions = predictions,
     theta_init = theta_init
   )
+  if (keep_fits) {
+    # Model fitting uses numeric role indicators; exposed data retain the
+    # caller's original indicators, masks and row order.
+    train_df[c("S_e", "S_o")] <- training_roles
+    result$training_data <- train_df
+    result$fitted_models <- list(
+      Y = fit_Y$model, D = fit_D$model,
+      S_e = fit_S_e$model, S_o = fit_S_o$model
+    )
+  }
+  result
 }
 
+
+# Numeric-response RF shared by ordinary and secondary-outcome RSV.
+fit_numeric_regression <- function(R, response, rf_spec, seed, num_threads,
+                                   R_predict = R) {
+  if (length(response) != nrow(R) || any(!is.finite(response))) {
+    stop("A finite regression response is required for every training record.")
+  }
+  spec <- rf_spec
+  if (!is.null(spec$model) && spec$model != "rf") stop("Variance/correction regression currently supports RF only.")
+  spec$model <- NULL
+  if (any(names(spec) %in% c("x", "y", "probability", "seed", "num.threads"))) {
+    stop("Set response, seed and threads through the function arguments.")
+  }
+  model <- do.call(ranger::ranger, c(
+    list(x = as.data.frame(R), y = response, probability = FALSE,
+         seed = seed, num.threads = num_threads), spec))
+  list(model = model,
+       predictions = as.numeric(stats::predict(model, data = as.data.frame(R_predict))$predictions))
+}
+
+.variance_prediction_floor <- function(raw, sigma2.quantile, sigma2.lower = NULL) {
+  if (length(sigma2.quantile) != 1L || !is.numeric(sigma2.quantile) ||
+      !is.finite(sigma2.quantile) || sigma2.quantile < 0 || sigma2.quantile > 1) {
+    stop("sigma2.quantile must be a finite number between zero and one.")
+  }
+  if (!is.null(sigma2.lower) && (length(sigma2.lower) != 1L ||
+      !is.numeric(sigma2.lower) || !is.finite(sigma2.lower) || sigma2.lower <= 0)) {
+    stop("sigma2.lower must be NULL or a positive finite scalar.")
+  }
+  if (!is.numeric(raw) || !is.null(dim(raw)) || !length(raw) || any(!is.finite(raw))) {
+    stop("Nonfinite variance predictions.")
+  }
+  if (!is.null(sigma2.lower)) return(sigma2.lower)
+  max(as.numeric(stats::quantile(raw, probs = sigma2.quantile)), .Machine$double.eps)
+}
+
+fit_variance_regression <- function(R, squared_residual, rf_spec, seed, num_threads,
+                                    R_predict = R, sigma2.quantile = 0.01,
+                                    sigma2.lower = NULL) {
+  .variance_prediction_floor(1, sigma2.quantile, sigma2.lower)
+  if (any(squared_residual < 0)) stop("Squared residuals must be nonnegative.")
+  fit <- fit_numeric_regression(R, squared_residual, rf_spec, seed, num_threads, R_predict)
+  raw_train <- as.numeric(stats::predict(fit$model, data = as.data.frame(R))$predictions)
+  lower <- .variance_prediction_floor(raw_train, sigma2.quantile, sigma2.lower)
+  list(model = fit$model, sigma2 = pmax(fit$predictions, lower),
+       sigma2_train = pmax(raw_train, lower), lower = lower,
+       n_floored = sum(fit$predictions < lower), raw_train = raw_train,
+       raw = fit$predictions)
+}
+
+.resolve_variance_model <- function(sigma2.method, sigma2_model, models) {
+  if (sigma2.method != "regression") return(NULL)
+  spec <- sigma2_model %||% models$Y
+  if (!is.list(spec) || !identical(spec$model, "rf")) {
+    stop("Set sigma2_model to an RF specification for sigma2.method = 'regression'.")
+  }
+  # Outcome-class weights are not numeric-response regression parameters.
+  spec$class.weights <- NULL
+  spec
+}
+
+.variance_from_predictions <- function(df, sigma2.quantile, sigma2.lower = NULL) {
+  raw <- df$pred_sigma2
+  lower <- .variance_prediction_floor(raw, sigma2.quantile, sigma2.lower)
+  if (any(raw < 0)) stop("Variance predictions must be nonnegative.")
+  if ("pred_sigma2_floor" %in% names(df)) lower <- df$pred_sigma2_floor
+  if (any(!is.finite(lower)) || any(lower <= 0)) stop("Invalid stored variance floor.")
+  pmax(raw, lower)
+}
+
+# The observed full residual includes the experimental-observational cross term
+# for overlapping roles. theta contains every non-reference outcome contrast.
+.squared_full_residual <- function(df, theta, y_levels, yK, X_cols) {
+  delta <- compute_deltas(df, y_levels, yK = yK, X_cols = X_cols, use_pred = FALSE)
+  theta_cols <- paste0("theta_Y", setdiff(y_levels, yK))
+  parameters <- if (length(X_cols)) {
+    dplyr::left_join(df[X_cols], theta, by = X_cols)
+  } else theta[rep(1L, nrow(df)), , drop = FALSE]
+  if (nrow(parameters) != nrow(df) || any(!is.finite(as.matrix(parameters[theta_cols])))) {
+    stop("Preliminary theta must cover every training stratum exactly once.")
+  }
+  residual <- delta$delta_e - rowSums(
+    as.matrix(delta[paste0("delta_o_Y", setdiff(y_levels, yK))]) *
+      as.matrix(parameters[theta_cols]))
+  if (any(!is.finite(residual))) stop("Nonfinite training residuals; check normalization cell support.")
+  as.numeric(residual^2)
+}
+
+# Add a variance prediction to a fit_all_models result. Everything used to fit
+# the residual regression, including normalizers and preliminary theta, is
+# training-only. Held-out X/R are used solely for prediction.
+.add_regression_variance <- function(fit, R_train, R_predict, X_train, X_predict,
+                                     y_levels, yK, sigma2_model, sigma2.quantile,
+                                     sigma2.lower, seed, num.threads, fixed_floor = TRUE,
+                                     preliminary_theta = NULL) {
+  df <- fit$training_data
+  X_cols <- names(fit$theta_init)[!startsWith(names(fit$theta_init), "theta_Y")]
+  if (is.null(yK)) yK <- y_levels[1]
+  preliminary <- if (is.null(preliminary_theta)) {
+    compute_estimate(df, fit$theta_init, y_levels, sigma2 = 1)
+  } else list(theta = preliminary_theta, coefficients = compute_theta0(
+    compute_theta_ate(df, preliminary_theta), y_levels, yK))
+  response <- .squared_full_residual(df, preliminary$theta, y_levels, yK, X_cols)
+  XR_train <- if (length(X_cols)) cbind(as.data.frame(X_train), R_train) else R_train
+  XR_predict <- if (length(X_cols)) cbind(as.data.frame(X_predict), R_predict) else R_predict
+  for (name in X_cols) if (is.character(XR_train[[name]])) {
+    XR_train[[name]] <- factor(XR_train[[name]])
+    XR_predict[[name]] <- factor(XR_predict[[name]], levels = levels(XR_train[[name]]))
+  }
+  variance <- fit_variance_regression(XR_train, response, sigma2_model,
+    if (is.null(seed)) NULL else seed + 5L, num.threads, XR_predict,
+    sigma2.quantile, sigma2.lower)
+  fit$predictions$pred_sigma2 <- variance$raw
+  if (fixed_floor) fit$predictions$pred_sigma2_floor <- variance$lower
+  fit$theta_init <- preliminary$theta
+  fit$variance <- list(method = "regression", model_spec = sigma2_model,
+    preliminary_theta = preliminary$theta, preliminary_effect = preliminary$coefficients,
+    raw_predictions = variance$raw, raw_training_predictions = variance$raw_train,
+    floor = variance$lower, floored_share = mean(variance$raw < variance$lower),
+    training_n = nrow(df), floor_source = if (fixed_floor) "training" else "estimation")
+  fit
+}
 
 #' Fit a single prediction model (binary outcome)
 #'
@@ -584,11 +727,15 @@ fit_xgboost_multicat <- function(XR_train, y, XR_test, y_levels, spec, seed = NU
 #'
 #' @keywords internal
 .predict_model <- function(model, XR_new, spec) {
-  XR_new <- as.matrix(XR_new)
-
   if (inherits(model, "ranger")) {
+    # Preserve factor covariates, as in the RF fitting and multicategory paths.
+    if (!(is.data.frame(XR_new) && any(vapply(XR_new, is.factor, logical(1))))) {
+      XR_new <- as.matrix(XR_new)
+    }
     return(stats::predict(model, XR_new)$predictions[, "1"])
-  } else if (inherits(model, "fastglm")) {
+  }
+  XR_new <- as.matrix(XR_new)
+  if (inherits(model, "fastglm")) {
     X_new <- cbind(1, XR_new)
     eta <- as.numeric(X_new %*% model$coefficients)
     return(1 / (1 + exp(-eta)))
