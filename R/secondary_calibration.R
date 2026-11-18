@@ -1,7 +1,7 @@
 # Secondary-outcome balancing targets (issue #8).
 #
 # Without baseline X, q_y = 1{S_o=1,Y=y} [basis(secondary) - mu_y].
-# Fit centering/normalization on the designated estimation records, then apply
+# Fit centering on the designated estimation records, then apply
 # that frozen state to any other records. Applying never re-estimates means.
 # This module constructs q only: it does not fit g, adjust H, or calibrate H.
 #
@@ -17,12 +17,7 @@
 # indicators to encode full joint conditional-mean calibration. Omit one
 # reference category to avoid redundant centered indicator columns.
 #
-# Optional normalization uses within-Y population covariance (divisor n_y).
-# Optional cell scaling divides by sqrt(n_y / n), with overlap counted once
-# in n. Both are off by default, matching main_revision.tex's centered q.
-#
 # X is intentionally unsupported. With X, centering must condition on (X,Y),
-# and normalization/scaling must use a specified conditional-X design.
 # Do not silently pool X strata. Continuous X needs a separate nuisance model.
 
 .secondary_target_stop <- function(reason, message, rows = integer(), diagnostics = NULL) {
@@ -267,7 +262,7 @@ secondary_joint_basis <- function() {
   b
 }
 
-#' Estimate observational centering and optional normalization state.
+#' Estimate observational centering state.
 #'
 #' The default encodes a single binary outcome. Continuous/custom bases encode
 #' selected moments. Full conditional calibration then additionally requires
@@ -277,15 +272,12 @@ secondary_joint_basis <- function() {
 #' population support is covered. Neither assumption is established by this fit.
 #' No-variation groups contribute zero restrictions; empty Y groups and other
 #' insufficient-support/rank failures remain errors with diagnostics.
+#' Returns the centering means and basis information needed by
+#' apply_secondary_targets(), with support/rank checks in $diagnostics.
+#' y_levels may contain any fixed finite set of numeric primary-outcome levels.
 fit_secondary_targets <- function(
     Y, secondary, S_o, S_e = NULL, y_levels = c(0, 1), basis = NULL,
-    normalize_covariance = FALSE, scale_cells = FALSE, rank_tolerance = 1e-10,
-    X = NULL) {
-  for (flag in list(normalize_covariance, scale_cells)) {
-    if (!is.logical(flag) || length(flag) != 1L || is.na(flag)) {
-      stop("Normalization flags must be TRUE or FALSE.")
-    }
-  }
+    rank_tolerance = 1e-10, X = NULL) {
   if (!is.numeric(rank_tolerance) || length(rank_tolerance) != 1L ||
       !is.finite(rank_tolerance) || rank_tolerance <= 0 || rank_tolerance >= 1) {
     stop("rank_tolerance must lie strictly between zero and one.")
@@ -341,23 +333,15 @@ fit_secondary_targets <- function(
       calibration_scope = scope, span_assumption_required = span_required,
       full_conditional_calibration_established = FALSE, status = status
     )
-    transform <- diag(p)
-    valid <- status %in% c("ok", "no_secondary_variation")
-    if (valid && p && normalize_covariance) {
-      transform <- eig$vectors %*% diag(1 / sqrt(eig$values), nrow = p) %*% t(eig$vectors)
-    }
-    if (valid && p && scale_cells) transform <- transform / sqrt(n_y / roles$n)
     columns <- length(target_names) + seq_len(p)
     names_y <- if (p) paste0("q_Y", y_levels[j], "_", make.names(colnames(group_basis))) else character()
     target_names <- c(target_names, names_y)
     groups[[j]] <- list(
-      Y = y_levels[j], mean = mu, covariance = V, transform = transform,
-      basis_names = colnames(group_basis), target_columns = columns,
+      Y = y_levels[j], mean = mu, target_columns = columns,
       no_secondary_variation = no_variation,
       # For continuous bases only constant groups need an empirical support
       # restriction. Joint indicators always require frozen category support.
-      support = if (type == "joint_categories" || no_variation) support else NULL,
-      n_observational = n_y, cell_probability = n_y / roles$n
+      support = if (type == "joint_categories" || no_variation) support else NULL
     )
   }
   diagnostics <- do.call(rbind, diagnostics)
@@ -372,29 +356,42 @@ fit_secondary_targets <- function(
     secondary_names = input$secondary_names,
     basis_names = if (type != "joint_categories") colnames(b) else NULL,
     target_names = make.unique(target_names), groups = groups,
-    normalize_covariance = normalize_covariance, scale_cells = scale_cells,
-    rank_tolerance = rank_tolerance, n_training = roles$n,
-    n_overlap_training = sum(roles$S_o & roles$S_e),
-    calibration_specification = list(
-      scope = scope, span_assumption_required = span_required,
-      span_condition = paste(
-        "Within each (X,Y,S=o), the conditional means of H0 and every component",
-        "of g/sigma2 must lie in the span of an intercept and the chosen basis."
-      ),
-      population_support_coverage_verified = FALSE,
-      full_conditional_calibration_established = FALSE
-    ),
     diagnostics = diagnostics
   ), class = "secondary_target_state")
 }
 
+#' Display centering means and counts; full checks remain in state$diagnostics.
+print.secondary_target_state <- function(x, ...) {
+  cat("Secondary-target centering; basis:", x$basis_type, "\n")
+  summary <- data.frame(
+    Y = x$y_levels,
+    n_observational = x$diagnostics$n_observational,
+    means = vapply(x$groups, function(group) {
+      if (!length(group$mean)) return("none (no variation)")
+      paste(paste0(names(group$mean), "=", format(group$mean, digits = 6)),
+            collapse = ", ")
+    }, character(1)),
+    row.names = NULL
+  )
+  print(summary, row.names = FALSE)
+  invisible(x)
+}
+
 #' Apply frozen state. Experimental-only measurements are never required.
-#' New observations do not re-estimate the basis support, centering, or scaling.
+#' New observations do not re-estimate the basis support or centering.
 #' A novel joint category, or variation in a previously constant group, is an
 #' explicit support error rather than a silently zero-filled restriction.
 apply_secondary_targets <- function(state, Y, S_o, secondary = NULL, S_e = NULL, X = NULL) {
   if (!inherits(state, "secondary_target_state") || !state$version %in% c(1L, 2L)) {
     stop("state must come from fit_secondary_targets().")
+  }
+  # Old unscaled states remain readable; transformed states must be refitted.
+  if (isTRUE(state$normalize_covariance) || isTRUE(state$scale_cells) ||
+      any(vapply(state$groups, function(group) {
+        !is.null(group$transform) &&
+          !isTRUE(all.equal(group$transform, diag(length(group$mean)), tolerance = 0))
+      }, logical(1)))) {
+    stop("Transformed target states are no longer supported; refit centering with fit_secondary_targets().")
   }
   roles <- .secondary_target_roles(Y, S_o, S_e, state$y_levels, X)
   q <- matrix(0, nrow = roles$n, ncol = length(state$target_names),
@@ -413,7 +410,7 @@ apply_secondary_targets <- function(state, Y, S_o, secondary = NULL, S_e = NULL,
       columns <- (j - 1L) * p + seq_len(p)
       q[b$rows[idx], columns] <- sweep(
         b$values[idx, , drop = FALSE], 2L, state$groups[[j]]$mean
-      ) %*% state$groups[[j]]$transform
+      )
     }
     return(q)
   }
@@ -445,7 +442,7 @@ apply_secondary_targets <- function(state, Y, S_o, secondary = NULL, S_e = NULL,
     } else b[idx, , drop = FALSE]
     q[input$rows[idx], group$target_columns] <- sweep(
       group_basis, 2L, group$mean
-    ) %*% group$transform
+    )
   }
   q
 }
